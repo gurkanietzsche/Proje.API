@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Proje.API.DTOs;
 using Proje.API.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Proje.API.Mapping
 {
@@ -9,34 +9,25 @@ namespace Proje.API.Mapping
     {
         public MappingProfile()
         {
-            // Kategori Eşleşmeleri
-            CreateMap<Category, CategoryDTO>();
-            CreateMap<CategoryDTO, Category>();
+            // Category mappings
+            CreateMap<Category, CategoryDTO>().ReverseMap();
 
-            // Ürün Eşleşmeleri
+            // Product mappings
             CreateMap<Product, ProductDTO>()
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name));
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null));
             CreateMap<ProductDTO, Product>();
 
-            // Sipariş Eşleşmeleri
-            CreateMap<Order, OrderDTO>();
-            CreateMap<OrderDTO, Order>();
+            // User mappings
+            CreateMap<IdentityUser, UserDTO>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.Token, opt => opt.Ignore())  // Token manuel atanacak
+                .ForMember(dest => dest.Roles, opt => opt.Ignore()); // Roller manuel atanacak
 
-            // Sipariş Öğesi Eşleşmeleri
-            CreateMap<OrderItem, OrderItemDTO>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
-            CreateMap<OrderItemDTO, OrderItem>();
+            // Eğer varsa Order mappings
+            // CreateMap<Order, OrderDTO>().ReverseMap();
 
-            // Sepet Eşleşmeleri
-            CreateMap<Cart, CartDTO>();
-            CreateMap<CartDTO, Cart>();
-
-            // Sepet Öğesi Eşleşmeleri
-            CreateMap<CartItem, CartItemDTO>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Product.ImageUrl))
-                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.Product.Price));
-            CreateMap<CartItemDTO, CartItem>();
+            // Eğer varsa Cart mappings
+            // CreateMap<Cart, CartDTO>().ReverseMap();
         }
     }
 }

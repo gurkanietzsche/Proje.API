@@ -1,15 +1,16 @@
-﻿using Proje.API.DTOs;
-using Proje.API.Models;
+﻿using Proje.API.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
     public interface ICategoryRepository
     {
-        Task<IEnumerable<Category>> GetAllCategoriesAsync();
-        Task<Category> GetCategoryByIdAsync(int id);
-        Task<Category> CreateCategoryAsync(CategoryDTO categoryDto);
-        Task<Category> UpdateCategoryAsync(int id, CategoryDTO categoryDto);
-        Task DeleteCategoryAsync(int id);
-        Task<bool> CategoryExistsAsync(int id); // Bu metodu ekleyin
+        Task<IEnumerable<Category>> GetAllAsync();
+        Task<Category> GetByIdAsync(int id);  // Bu metot tanımlanmış olmalı
+        Task AddAsync(Category category);
+        Task UpdateAsync(Category category);
+        Task DeleteAsync(int id);
+        Task<bool> SaveChangesAsync();
     }
 }

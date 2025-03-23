@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
 using Proje.API.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Proje.API.Controllers
 {
@@ -12,26 +17,33 @@ namespace Proje.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ITokenService _tokenService;
+        private readonly IMapper _mapper;
         private readonly ResultDTO _result;
 
         public AccountController(
             UserManager<IdentityUser> userManager,
+            SignInManager<IdentityUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            IMapper mapper)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
             _roleManager = roleManager;
             _tokenService = tokenService;
+            _mapper = mapper;
             _result = new ResultDTO();
         }
 
         // 1. Login
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDTO model)
+        public async Task<ActionResult<ResultDTO>> Login(LoginDTO loginDto)
         {
-            var user = await _userManager.FindByNameAsync(model.Username);
+            var user = await _userManager.FindByNameAsync(loginDto.Username);
+
             if (user == null)
             {
                 _result.Status = false;
@@ -39,27 +51,27 @@ namespace Proje.API.Controllers
                 return Unauthorized(_result);
             }
 
-            if (await _userManager.CheckPasswordAsync(user, model.Password))
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
+
+            if (!result.Succeeded)
             {
-                var userRoles = await _userManager.GetRolesAsync(user);
-                var token = _tokenService.CreateToken(user, userRoles);
-
-                _result.Status = true;
-                _result.Message = "Giriş başarılı";
-                _result.Data = new
-                {
-                    token = token,
-                    username = user.UserName,
-                    email = user.Email,
-                    roles = userRoles
-                };
-
-                return Ok(_result);
+                _result.Status = false;
+                _result.Message = "Hatalı şifre";
+                return Unauthorized(_result);
             }
 
-            _result.Status = false;
-            _result.Message = "Hatalı şifre";
-            return Unauthorized(_result);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            // AutoMapper kullanımı (token ve roles manuel atanıyor)
+            var userDto = _mapper.Map<UserDTO>(user);
+            userDto.Token = _tokenService.CreateToken(user, roles);
+            userDto.Roles = roles.ToList();
+
+            _result.Status = true;
+            _result.Message = "Giriş başarılı";
+            _result.Data = userDto;
+
+            return _result;
         }
 
         // 2. Register
@@ -81,6 +93,7 @@ namespace Proje.API.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest, _result);
             }
 
+            // Yeni kullanıcıyı manuel oluşturma (AutoMapper kullanılmıyor çünkü şifre oluşturma özel işlem)
             IdentityUser user = new()
             {
                 UserName = model.Username,
@@ -124,15 +137,13 @@ namespace Proje.API.Controllers
 
             var roles = await _userManager.GetRolesAsync(user);
 
+            // AutoMapper kullanımı
+            var userDto = _mapper.Map<UserDTO>(user);
+            userDto.Roles = roles.ToList();
+
             _result.Status = true;
             _result.Message = "Profil bilgileri getirildi";
-            _result.Data = new
-            {
-                username = user.UserName,
-                email = user.Email,
-                phoneNumber = user.PhoneNumber,
-                roles = roles
-            };
+            _result.Data = userDto;
 
             return Ok(_result);
         }
@@ -220,24 +231,22 @@ namespace Proje.API.Controllers
         public async Task<IActionResult> GetAllUsers()
         {
             var users = _userManager.Users.ToList();
-            var userList = new List<object>();
+            var userListDto = new List<UserDTO>();
 
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                userList.Add(new
-                {
-                    id = user.Id,
-                    username = user.UserName,
-                    email = user.Email,
-                    phoneNumber = user.PhoneNumber,
-                    roles = roles
-                });
+
+                // AutoMapper kullanımı
+                var userDto = _mapper.Map<UserDTO>(user);
+                userDto.Roles = roles.ToList();
+
+                userListDto.Add(userDto);
             }
 
             _result.Status = true;
             _result.Message = "Kullanıcı listesi başarıyla getirildi";
-            _result.Data = userList;
+            _result.Data = userListDto;
             return Ok(_result);
         }
 

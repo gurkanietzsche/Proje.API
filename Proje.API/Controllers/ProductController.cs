@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
 using Proje.API.Models;
 using Proje.API.Repositories;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proje.API.Controllers
 {
@@ -15,7 +17,9 @@ namespace Proje.API.Controllers
         private readonly IMapper _mapper;
         private readonly ResultDTO _result;
 
-        public ProductController(IProductRepository productRepository, IMapper mapper)
+        public ProductController(
+            IProductRepository productRepository,
+            IMapper mapper)
         {
             _productRepository = productRepository;
             _mapper = mapper;
@@ -49,8 +53,6 @@ namespace Proje.API.Controllers
         public async Task<ActionResult<ResultDTO>> CreateProduct(ProductDTO productDto)
         {
             var product = _mapper.Map<Product>(productDto);
-            product.Created = DateTime.Now;
-            product.Updated = DateTime.Now;
 
             await _productRepository.AddAsync(product);
             await _productRepository.SaveChangesAsync();
@@ -83,7 +85,6 @@ namespace Proje.API.Controllers
             }
 
             _mapper.Map(productDto, product);
-            product.Updated = DateTime.Now;
 
             await _productRepository.UpdateAsync(product);
             await _productRepository.SaveChangesAsync();
