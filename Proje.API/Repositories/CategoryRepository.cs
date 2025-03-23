@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Proje.API.Data;
-using Proje.API.DTOs;
 using Proje.API.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
@@ -14,62 +15,38 @@ namespace Proje.API.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
+        public async Task<IEnumerable<Category>> GetAllAsync()
         {
             return await _context.Categories.ToListAsync();
         }
 
-        public async Task<Category> GetCategoryByIdAsync(int id)
+        public async Task<Category> GetByIdAsync(int id)
         {
             return await _context.Categories.FindAsync(id);
         }
 
-        public async Task<Category> CreateCategoryAsync(CategoryDTO categoryDto)
+        public async Task AddAsync(Category category)
         {
-            var category = new Category
-            {
-                Name = categoryDto.Name,
-                Description = categoryDto.Description,
-                IsActive = categoryDto.IsActive,
-                Created = DateTime.Now,
-                Updated = DateTime.Now
-            };
-
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
-            return category;
+            await _context.Categories.AddAsync(category);
         }
 
-        public async Task<Category> UpdateCategoryAsync(int id, CategoryDTO categoryDto)
+        public async Task UpdateAsync(Category category)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category != null)
-            {
-                category.Name = categoryDto.Name;
-                category.Description = categoryDto.Description;
-                category.IsActive = categoryDto.IsActive;
-                category.Updated = DateTime.Now;
-
-                _context.Categories.Update(category);
-                await _context.SaveChangesAsync();
-            }
-            return category;
+            _context.Categories.Update(category);
         }
 
-        public async Task DeleteCategoryAsync(int id)
+        public async Task DeleteAsync(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await GetByIdAsync(id);
             if (category != null)
             {
                 _context.Categories.Remove(category);
-                await _context.SaveChangesAsync();
             }
         }
 
-        // Bu metodu ekleyin
-        public async Task<bool> CategoryExistsAsync(int id)
+        public async Task<bool> SaveChangesAsync()
         {
-            return await _context.Categories.AnyAsync(c => c.Id == id);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

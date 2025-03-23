@@ -18,17 +18,18 @@ namespace Proje.API.Controllers
         private readonly ResultDTO _result;
 
         public CategoryController(
-    ICategoryRepository categoryRepository,  // Doğru interface tipi kullanılmalı
-    IMapper mapper)
+            ICategoryRepository categoryRepository,
+            IMapper mapper)
         {
             _categoryRepository = categoryRepository;
             _mapper = mapper;
+            _result = new ResultDTO();
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
         {
-            var categories = await _categoryRepository.GetAllCategoriesAsync();
+            var categories = await _categoryRepository.GetAllAsync();
             var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
             return Ok(categoryDtos);
         }
@@ -52,7 +53,7 @@ namespace Proje.API.Controllers
         public async Task<ActionResult<ResultDTO>> CreateCategory(CategoryDTO categoryDto)
         {
             var category = _mapper.Map<Category>(categoryDto);
-            
+
             await _categoryRepository.AddAsync(category);
             await _categoryRepository.SaveChangesAsync();
 

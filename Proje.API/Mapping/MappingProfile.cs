@@ -20,14 +20,8 @@ namespace Proje.API.Mapping
             // User mappings
             CreateMap<IdentityUser, UserDTO>()
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
-                .ForMember(dest => dest.Token, opt => opt.Ignore())  // Token manuel atanacak
-                .ForMember(dest => dest.Roles, opt => opt.Ignore()); // Roller manuel atanacak
-
-            // Eğer varsa Order mappings
-            // CreateMap<Order, OrderDTO>().ReverseMap();
-
-            // Eğer varsa Cart mappings
-            // CreateMap<Cart, CartDTO>().ReverseMap();
+                .ForMember(dest => dest.Token, opt => opt.Ignore())
+                .ForMember(dest => dest.Roles, opt => opt.Ignore());
         }
     }
 }

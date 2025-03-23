@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // Register Repositories
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
