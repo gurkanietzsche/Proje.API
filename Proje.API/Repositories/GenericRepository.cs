@@ -1,11 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Proje.API.Data;
-using Proje.API.Models;
 using System.Linq.Expressions;
 
 namespace Proje.API.Repositories
 {
-    public class GenericRepository<T> : IRepository<T> where T : BaseEntity
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected readonly ApplicationDbContext _context;
         protected readonly DbSet<T> _dbSet;
@@ -21,14 +20,14 @@ namespace Proje.API.Repositories
             return await _dbSet.ToListAsync();
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
-        {
-            return await _dbSet.Where(predicate).ToListAsync();
-        }
-
         public async Task<T> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
+        {
+            return await _dbSet.Where(expression).ToListAsync();
         }
 
         public async Task AddAsync(T entity)
@@ -38,8 +37,7 @@ namespace Proje.API.Repositories
 
         public Task UpdateAsync(T entity)
         {
-            entity.UpdatedAt = DateTime.Now;
-            _context.Entry(entity).State = EntityState.Modified;
+            _dbSet.Update(entity);
             return Task.CompletedTask;
         }
 
@@ -52,9 +50,9 @@ namespace Proje.API.Repositories
             }
         }
 
-        public async Task SaveChangesAsync()
+        public async Task<bool> SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

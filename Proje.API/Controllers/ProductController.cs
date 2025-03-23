@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
 using Proje.API.Models;
@@ -11,31 +12,21 @@ namespace Proje.API.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductRepository _productRepository;
-        private readonly Result _result;
+        private readonly IMapper _mapper;
+        private readonly ResultDTO _result;
 
-        public ProductController(IProductRepository productRepository)
+        public ProductController(IProductRepository productRepository, IMapper mapper)
         {
             _productRepository = productRepository;
-            _result = new Result();
+            _mapper = mapper;
+            _result = new ResultDTO();
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
             var products = await _productRepository.GetProductsWithCategoryAsync();
-
-            var productDtos = products.Select(p => new ProductDTO
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Stock = p.Stock,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category?.Name,
-                IsActive = p.IsActive
-            }).ToList();
-
+            var productDtos = _mapper.Map<IEnumerable<ProductDTO>>(products);
             return Ok(productDtos);
         }
 
@@ -49,34 +40,17 @@ namespace Proje.API.Controllers
                 return NotFound();
             }
 
-            var productDto = new ProductDTO
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                Stock = product.Stock,
-                CategoryId = product.CategoryId,
-                CategoryName = product.Category?.Name,
-                IsActive = product.IsActive
-            };
-
+            var productDto = _mapper.Map<ProductDTO>(product);
             return Ok(productDto);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<ActionResult<Result>> CreateProduct(ProductDTO productDto)
+        public async Task<ActionResult<ResultDTO>> CreateProduct(ProductDTO productDto)
         {
-            var product = new Product
-            {
-                Name = productDto.Name,
-                Description = productDto.Description,
-                Price = productDto.Price,
-                Stock = productDto.Stock,
-                CategoryId = productDto.CategoryId,
-                IsActive = productDto.IsActive
-            };
+            var product = _mapper.Map<Product>(productDto);
+            product.Created = DateTime.Now;
+            product.Updated = DateTime.Now;
 
             await _productRepository.AddAsync(product);
             await _productRepository.SaveChangesAsync();
@@ -90,7 +64,7 @@ namespace Proje.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<Result>> UpdateProduct(int id, ProductDTO productDto)
+        public async Task<ActionResult<ResultDTO>> UpdateProduct(int id, ProductDTO productDto)
         {
             if (id != productDto.Id)
             {
@@ -108,12 +82,8 @@ namespace Proje.API.Controllers
                 return NotFound(_result);
             }
 
-            product.Name = productDto.Name;
-            product.Description = productDto.Description;
-            product.Price = productDto.Price;
-            product.Stock = productDto.Stock;
-            product.CategoryId = productDto.CategoryId;
-            product.IsActive = productDto.IsActive;
+            _mapper.Map(productDto, product);
+            product.Updated = DateTime.Now;
 
             await _productRepository.UpdateAsync(product);
             await _productRepository.SaveChangesAsync();
@@ -126,7 +96,7 @@ namespace Proje.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Result>> DeleteProduct(int id)
+        public async Task<ActionResult<ResultDTO>> DeleteProduct(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
 

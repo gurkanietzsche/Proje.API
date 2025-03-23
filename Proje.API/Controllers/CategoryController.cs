@@ -1,135 +1,96 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
-using Proje.API.Models;
 using Proje.API.Repositories;
 
 namespace Proje.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Bu satırı ekleyin veya düzeltin
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryRepository _categoryRepository;
-        private readonly Result _result;
+        private readonly ResultDTO _result;
 
         public CategoryController(ICategoryRepository categoryRepository)
         {
             _categoryRepository = categoryRepository;
-            _result = new Result();
+            _result = new ResultDTO();
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
+        [AllowAnonymous] // İsteğe bağlı: Listeleme için yetki gerektirmeyin
+        public async Task<ActionResult<ResultDTO>> GetAllCategories()
         {
-            var categories = await _categoryRepository.GetAllAsync();
-
-            var categoryDtos = categories.Select(c => new CategoryDTO
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                IsActive = c.IsActive
-            }).ToList();
-
-            return Ok(categoryDtos);
+            var categories = await _categoryRepository.GetAllCategoriesAsync();
+            _result.Status = true;
+            _result.Message = "Categories retrieved successfully";
+            _result.Data = categories;
+            return Ok(_result);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<CategoryDTO>> GetCategory(int id)
+        [AllowAnonymous] // İsteğe bağlı: Detay görüntüleme için yetki gerektirmeyin
+        public async Task<ActionResult<ResultDTO>> GetCategoryById(int id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
-
+            var category = await _categoryRepository.GetCategoryByIdAsync(id);
             if (category == null)
             {
-                return NotFound();
+                _result.Status = false;
+                _result.Message = "Category not found";
+                return NotFound(_result);
             }
-
-            var categoryDto = new CategoryDTO
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Description = category.Description,
-                IsActive = category.IsActive
-            };
-
-            return Ok(categoryDto);
+            _result.Status = true;
+            _result.Message = "Category retrieved successfully";
+            _result.Data = category;
+            return Ok(_result);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<ActionResult<Result>> CreateCategory(CategoryDTO categoryDto)
+        [Authorize(Roles = "Admin")] // Sadece Admin rolüne sahip kullanıcılar ekleme yapabilir
+        public async Task<ActionResult<ResultDTO>> CreateCategory(CategoryDTO categoryDto)
         {
-            var category = new Category
-            {
-                Name = categoryDto.Name,
-                Description = categoryDto.Description,
-                IsActive = categoryDto.IsActive
-            };
-
-            await _categoryRepository.AddAsync(category);
-            await _categoryRepository.SaveChangesAsync();
-
+            var category = await _categoryRepository.CreateCategoryAsync(categoryDto);
             _result.Status = true;
-            _result.Message = "Kategori başarıyla eklendi";
-            _result.Data = category.Id;
-
-            return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, _result);
+            _result.Message = "Category created successfully";
+            _result.Data = category;
+            return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, _result);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<Result>> UpdateCategory(int id, CategoryDTO categoryDto)
+        [Authorize(Roles = "Admin")] // Sadece Admin rolüne sahip kullanıcılar güncelleme yapabilir
+        public async Task<ActionResult<ResultDTO>> UpdateCategory(int id, CategoryDTO categoryDto)
         {
-            if (id != categoryDto.Id)
+            if (!await _categoryRepository.CategoryExistsAsync(id))
             {
                 _result.Status = false;
-                _result.Message = "Id uyuşmazlığı";
-                return BadRequest(_result);
-            }
-
-            var category = await _categoryRepository.GetByIdAsync(id);
-
-            if (category == null)
-            {
-                _result.Status = false;
-                _result.Message = "Kategori bulunamadı";
+                _result.Message = "Category not found";
                 return NotFound(_result);
             }
 
-            category.Name = categoryDto.Name;
-            category.Description = categoryDto.Description;
-            category.IsActive = categoryDto.IsActive;
-
-            await _categoryRepository.UpdateAsync(category);
-            await _categoryRepository.SaveChangesAsync();
-
+            var updatedCategory = await _categoryRepository.UpdateCategoryAsync(id, categoryDto);
             _result.Status = true;
-            _result.Message = "Kategori başarıyla güncellendi";
-
-            return _result;
+            _result.Message = "Category updated successfully";
+            _result.Data = updatedCategory;
+            return Ok(_result);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Result>> DeleteCategory(int id)
+        [Authorize(Roles = "Admin")] // Sadece Admin rolüne sahip kullanıcılar silme yapabilir
+        public async Task<ActionResult<ResultDTO>> DeleteCategory(int id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
-
-            if (category == null)
+            if (!await _categoryRepository.CategoryExistsAsync(id))
             {
                 _result.Status = false;
-                _result.Message = "Kategori bulunamadı";
+                _result.Message = "Category not found";
                 return NotFound(_result);
             }
 
-            await _categoryRepository.DeleteAsync(id);
-            await _categoryRepository.SaveChangesAsync();
-
+            await _categoryRepository.DeleteCategoryAsync(id);
             _result.Status = true;
-            _result.Message = "Kategori başarıyla silindi";
-
-            return _result;
+            _result.Message = "Category deleted successfully";
+            return Ok(_result);
         }
     }
 }

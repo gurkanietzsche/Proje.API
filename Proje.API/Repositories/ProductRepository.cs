@@ -24,10 +24,4 @@ namespace Proje.API.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
     }
-
-    public interface IProductRepository : IRepository<Product>
-    {
-        Task<IEnumerable<Product>> GetProductsWithCategoryAsync();
-        Task<Product> GetProductWithCategoryAsync(int id);
-    }
 }
