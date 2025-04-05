@@ -28,6 +28,11 @@ namespace Proje.API.Data
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Category>()
+    .HasOne(c => c.ParentCategory)
+    .WithMany(c => c.ChildCategories)
+    .HasForeignKey(c => c.ParentCategoryId)
+    .OnDelete(DeleteBehavior.Restrict);  // Ana kategori silindiğinde alt kategoriler silinmez
 
             // Sipariş - Sipariş Öğesi ilişkisi
             modelBuilder.Entity<OrderItem>()

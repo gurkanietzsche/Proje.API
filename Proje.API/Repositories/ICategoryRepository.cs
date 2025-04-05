@@ -12,5 +12,9 @@ namespace Proje.API.Repositories
         Task UpdateAsync(Category category);
         Task DeleteAsync(int id);
         Task<bool> SaveChangesAsync();
+        Task<IEnumerable<Category>> GetMainCategoriesAsync();
+        Task<IEnumerable<Category>> GetChildCategoriesAsync(int parentId);
+        Task<Category> GetCategoryWithChildrenAsync(int id);
+        Task<Category> GetFullCategoryHierarchyAsync(int id);
     }
 }

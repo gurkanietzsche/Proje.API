@@ -26,6 +26,7 @@ namespace Proje.API.Controllers
             _result = new ResultDTO();
         }
 
+        // Mevcut endpointler burada kalacak
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
         {
@@ -115,6 +116,37 @@ namespace Proje.API.Controllers
             _result.Message = "Kategori başarıyla silindi";
 
             return _result;
+        }
+
+        // Yeni eklenen kategori hiyerarşisi endpointleri
+        [HttpGet("main")]
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetMainCategories()
+        {
+            var categories = await _categoryRepository.GetMainCategoriesAsync();
+            var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
+            return Ok(categoryDtos);
+        }
+
+        [HttpGet("children/{parentId}")]
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetChildCategories(int parentId)
+        {
+            var categories = await _categoryRepository.GetChildCategoriesAsync(parentId);
+            var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
+            return Ok(categoryDtos);
+        }
+
+        [HttpGet("hierarchy/{id}")]
+        public async Task<ActionResult<CategoryDTO>> GetCategoryHierarchy(int id)
+        {
+            var category = await _categoryRepository.GetFullCategoryHierarchyAsync(id);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            var categoryDto = _mapper.Map<CategoryDTO>(category);
+            return Ok(categoryDto);
         }
     }
 }

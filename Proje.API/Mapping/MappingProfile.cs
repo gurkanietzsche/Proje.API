@@ -9,8 +9,13 @@ namespace Proje.API.Mapping
     {
         public MappingProfile()
         {
-            // Category mappings
-            CreateMap<Category, CategoryDTO>().ReverseMap();
+            // MappingProfile içine ekleyin
+            CreateMap<Category, CategoryDTO>()
+                .ForMember(dest => dest.ParentCategoryName, opt =>
+                    opt.MapFrom(src => src.ParentCategory != null ? src.ParentCategory.Name : null))
+                .ForMember(dest => dest.ChildCategories, opt =>
+                    opt.MapFrom(src => src.ChildCategories));
+            CreateMap<CategoryDTO, Category>();
 
             // Product mappings
             CreateMap<Product, ProductDTO>()
