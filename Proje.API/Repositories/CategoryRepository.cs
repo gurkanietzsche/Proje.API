@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class CategoryRepository : ICategoryRepository
+    public class CategoryRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -16,7 +16,6 @@ namespace Proje.API.Repositories
             _context = context;
         }
 
-        // Mevcut metodlarınız burada kalacak
         public async Task<IEnumerable<Category>> GetAllAsync()
         {
             return await _context.Categories.ToListAsync();
@@ -32,9 +31,10 @@ namespace Proje.API.Repositories
             await _context.Categories.AddAsync(category);
         }
 
-        public async Task UpdateAsync(Category category)
+        public Task UpdateAsync(Category category)
         {
             _context.Categories.Update(category);
+            return Task.CompletedTask;
         }
 
         public async Task DeleteAsync(int id)
@@ -46,12 +46,12 @@ namespace Proje.API.Repositories
             }
         }
 
-        public async Task<bool> SaveChangesAsync()
+        public async Task SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync() > 0;
+            await _context.SaveChangesAsync();
         }
 
-        // Yeni eklenen kategori hiyerarşisi metodları
+        // Kategori hiyerarşisi metodları
         public async Task<IEnumerable<Category>> GetMainCategoriesAsync()
         {
             return await _context.Categories
@@ -82,4 +82,4 @@ namespace Proje.API.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
     }
-}
+} 
