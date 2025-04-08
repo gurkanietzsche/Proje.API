@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
@@ -19,7 +20,7 @@ namespace Proje.API.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly ITokenService _tokenService;
+        private readonly TokenService _tokenService;
         private readonly IMapper _mapper;
         private readonly ResultDTO _result;
 
@@ -27,7 +28,7 @@ namespace Proje.API.Controllers
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            ITokenService tokenService,
+            TokenService tokenService,
             IMapper mapper)
         {
             _userManager = userManager;
@@ -42,6 +43,13 @@ namespace Proje.API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ResultDTO>> Login(LoginDTO loginDto)
         {
+            if (!ModelState.IsValid)
+            {
+                _result.Status = false;
+                _result.Message = "Geçersiz giriş bilgileri";
+                return BadRequest(_result);
+            }
+
             var user = await _userManager.FindByNameAsync(loginDto.Username);
 
             if (user == null)
@@ -78,6 +86,13 @@ namespace Proje.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO model)
         {
+            if (!ModelState.IsValid)
+            {
+                _result.Status = false;
+                _result.Message = "Geçersiz kayıt bilgileri";
+                return BadRequest(_result);
+            }
+
             var userExists = await _userManager.FindByNameAsync(model.Username);
             if (userExists != null)
             {
@@ -126,6 +141,13 @@ namespace Proje.API.Controllers
         public async Task<IActionResult> GetProfile()
         {
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                _result.Status = false;
+                _result.Message = "Kullanıcı bilgisi bulunamadı";
+                return BadRequest(_result);
+            }
+
             var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
@@ -153,7 +175,21 @@ namespace Proje.API.Controllers
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDTO model)
         {
+            if (!ModelState.IsValid)
+            {
+                _result.Status = false;
+                _result.Message = "Geçersiz profil bilgileri";
+                return BadRequest(_result);
+            }
+
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                _result.Status = false;
+                _result.Message = "Kullanıcı bilgisi bulunamadı";
+                return BadRequest(_result);
+            }
+
             var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
@@ -202,7 +238,21 @@ namespace Proje.API.Controllers
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO model)
         {
+            if (!ModelState.IsValid)
+            {
+                _result.Status = false;
+                _result.Message = "Geçersiz şifre bilgileri";
+                return BadRequest(_result);
+            }
+
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                _result.Status = false;
+                _result.Message = "Kullanıcı bilgisi bulunamadı";
+                return BadRequest(_result);
+            }
+
             var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
@@ -255,6 +305,13 @@ namespace Proje.API.Controllers
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRole([FromBody] AssignRoleDTO model)
         {
+            if (!ModelState.IsValid)
+            {
+                _result.Status = false;
+                _result.Message = "Geçersiz rol bilgileri";
+                return BadRequest(_result);
+            }
+
             var user = await _userManager.FindByNameAsync(model.Username);
             if (user == null)
             {
