@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository
     {
         private readonly UserManager<IdentityUser> _userManager;
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class OrderRepository : GenericRepository<Order>, IOrderRepository
+    public class OrderRepository : GenericRepository<Order>
     {
         public OrderRepository(ApplicationDbContext context) : base(context)
         {

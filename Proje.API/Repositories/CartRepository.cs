@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class CartRepository : GenericRepository<Cart>, ICartRepository
+    public class CartRepository : GenericRepository<Cart>
     {
         public CartRepository(ApplicationDbContext context) : base(context)
         {

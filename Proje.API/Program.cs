@@ -51,11 +51,11 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // Register Repositories
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<CartRepository>();
+builder.Services.AddScoped<UserRepository>();
 
 // Register Services
 builder.Services.AddScoped<ITokenService, TokenService>();

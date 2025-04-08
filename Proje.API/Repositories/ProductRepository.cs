@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Proje.API.Data;
 using Proje.API.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class ProductRepository : GenericRepository<Product>, IProductRepository
+    public class ProductRepository : GenericRepository<Product>
     {
         public ProductRepository(ApplicationDbContext context) : base(context)
         {

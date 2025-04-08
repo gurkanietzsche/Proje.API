@@ -1,58 +1,85 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Proje.API.Data;
-using System.Linq.Expressions;
+using Proje.API.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proje.API.Repositories
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class CategoryRepository
     {
-        protected readonly ApplicationDbContext _context;
-        protected readonly DbSet<T> _dbSet;
+        private readonly ApplicationDbContext _context;
 
-        public GenericRepository(ApplicationDbContext context)
+        public CategoryRepository(ApplicationDbContext context)
         {
             _context = context;
-            _dbSet = context.Set<T>();
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        // Mevcut metodlarınız burada kalacak
+        public async Task<IEnumerable<Category>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            return await _context.Categories.ToListAsync();
         }
 
-        public async Task<T> GetByIdAsync(int id)
+        public async Task<Category> GetByIdAsync(int id)
         {
-            return await _dbSet.FindAsync(id);
+            return await _context.Categories.FindAsync(id);
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
+        public async Task AddAsync(Category category)
         {
-            return await _dbSet.Where(expression).ToListAsync();
+            await _context.Categories.AddAsync(category);
         }
 
-        public async Task AddAsync(T entity)
+        public async Task UpdateAsync(Category category)
         {
-            await _dbSet.AddAsync(entity);
-        }
-
-        public Task UpdateAsync(T entity)
-        {
-            _dbSet.Update(entity);
-            return Task.CompletedTask;
+            _context.Categories.Update(category);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
+            var category = await GetByIdAsync(id);
+            if (category != null)
             {
-                _dbSet.Remove(entity);
+                _context.Categories.Remove(category);
             }
         }
 
         public async Task<bool> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        // Kategori hiyerarşisi metodları
+        public async Task<IEnumerable<Category>> GetMainCategoriesAsync()
+        {
+            return await _context.Categories
+                .Where(c => c.ParentCategoryId == null)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Category>> GetChildCategoriesAsync(int parentId)
+        {
+            return await _context.Categories
+                .Where(c => c.ParentCategoryId == parentId)
+                .ToListAsync();
+        }
+
+        public async Task<Category> GetCategoryWithChildrenAsync(int id)
+        {
+            return await _context.Categories
+                .Include(c => c.ChildCategories)
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<Category> GetFullCategoryHierarchyAsync(int id)
+        {
+            return await _context.Categories
+                .Include(c => c.ParentCategory)
+                .Include(c => c.ChildCategories)
+                .ThenInclude(c => c.ChildCategories)  // İki seviye alt kategoriye kadar yükle
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
     }
 }
