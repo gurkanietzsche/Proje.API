@@ -56,6 +56,8 @@ builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<CartRepository>();
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<TokenService>();
+
 
 // Register Services
 builder.Services.AddScoped<ITokenService, TokenService>();
