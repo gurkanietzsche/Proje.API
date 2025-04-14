@@ -176,7 +176,6 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<Proje.API.MiddleWare.ExceptionMiddleware>();
 
 app.MapControllers();
 

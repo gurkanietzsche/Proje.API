@@ -105,7 +105,9 @@ namespace Proje.API.Controllers
             {
                 // Yeni sepet oluştur
                 cart = new Cart { UserId = userId };
-                await _cartRepository.CreateCartAsync(cart);
+                // CreateCartAsync metodu olmadığı için doğrudan AddAsync kullanıyoruz
+                await _cartRepository.AddAsync(cart);
+                await _cartRepository.SaveChangesAsync();
             }
 
             // Sepete ürün ekle
