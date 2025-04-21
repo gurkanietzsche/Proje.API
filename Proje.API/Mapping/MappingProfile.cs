@@ -27,6 +27,24 @@ namespace Proje.API.Mapping
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.Token, opt => opt.Ignore())
                 .ForMember(dest => dest.Roles, opt => opt.Ignore());
+            // ProductReview mappings
+            CreateMap<ProductReview, ProductReviewDTO>()
+                .ForMember(dest => dest.Username, opt => opt.Ignore()); // Username kullanıcı servisinden alınmalı
+
+            CreateMap<CreateProductReviewDTO, ProductReview>();
+
+            // Question mappings
+            CreateMap<Question, QuestionDTO>()
+                .ForMember(dest => dest.Username, opt => opt.Ignore()) // Username kullanıcı servisinden alınmalı
+                .ForMember(dest => dest.Answers, opt => opt.MapFrom(src => src.Answers));
+
+            CreateMap<CreateQuestionDTO, Question>();
+
+            // Answer mappings
+            CreateMap<Answer, AnswerDTO>()
+                .ForMember(dest => dest.Username, opt => opt.Ignore()); // Username kullanıcı servisinden alınmalı
+
+            CreateMap<CreateAnswerDTO, Answer>();
         }
     }
 }

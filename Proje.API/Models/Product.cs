@@ -13,5 +13,7 @@
         public virtual Category Category { get; set; }
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         public virtual ICollection<CartItem> CartItems { get; set; }
+        public virtual ICollection<ProductReview> Reviews { get; set; }
+        public virtual ICollection<Question> Questions { get; set; }
     }
 }

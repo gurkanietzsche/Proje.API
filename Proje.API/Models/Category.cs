@@ -26,7 +26,7 @@ namespace Proje.API.Models
         public int? ParentCategoryId { get; set; }
 
         [ForeignKey("ParentCategoryId")]
-        public Category ParentCategory { get; set; }
+        public Category? ParentCategory { get; set; }
 
         // Navigation properties
         public ICollection<Category> ChildCategories { get; set; }

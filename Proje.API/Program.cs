@@ -57,6 +57,9 @@ builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<CartRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<ProductReviewRepository>();
+builder.Services.AddScoped<QuestionRepository>();
+builder.Services.AddScoped<AnswerRepository>();
 
 
 // Register Services
@@ -77,12 +80,18 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ürün Satýþ Portalý API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Proje API", Version = "v1" });
 
-    // JWT için swagger ayarý
+    // Swagger JSON örneklerini geliþtirme
+    c.UseInlineDefinitionsForEnums();
+
+    // Aþaðýdaki satýrý ekleyin (isteðe baðlý)
+    c.SupportNonNullableReferenceTypes();
+
+    // JWT kimlik doðrulama için
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Description = "JWT Authorization header using the Bearer scheme.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
@@ -100,7 +109,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            new string[] { }
         }
     });
 });

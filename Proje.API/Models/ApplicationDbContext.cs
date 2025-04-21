@@ -17,6 +17,9 @@ namespace Proje.API.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<ProductReview> ProductReviews { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,6 +64,26 @@ namespace Proje.API.Data
                 .WithMany(p => p.CartItems)
                 .HasForeignKey(ci => ci.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // Ürün - Yorum ilişkisi
+            modelBuilder.Entity<ProductReview>()
+                .HasOne(r => r.Product)
+                .WithMany(p => p.Reviews)
+                .HasForeignKey(r => r.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Ürün - Soru ilişkisi
+            modelBuilder.Entity<Question>()
+                .HasOne(q => q.Product)
+                .WithMany(p => p.Questions)
+                .HasForeignKey(q => q.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Soru - Cevap ilişkisi
+            modelBuilder.Entity<Answer>()
+                .HasOne(a => a.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
