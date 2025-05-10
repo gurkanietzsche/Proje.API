@@ -108,6 +108,10 @@ namespace Proje.API.Controllers
                 }
 
                 var product = _mapper.Map<Product>(productDto);
+                // Zorunlu alanları manuel olarak set edin
+                product.Created = DateTime.Now;
+                product.Updated = DateTime.Now;
+                product.IsActive = true;
 
                 await _productRepository.AddAsync(product);
                 await _productRepository.SaveChangesAsync();
@@ -118,10 +122,15 @@ namespace Proje.API.Controllers
 
                 return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, _result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
-                _result.Message = "Ürün eklenirken bir hata oluştu: " + ex.Message;
+                // Inner exception'ı da yakalayın
+                _result.Message = $"Ürün eklenirken bir hata oluştu: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    _result.Message += $" Inner Exception: {ex.InnerException.Message}";
+                }
                 return StatusCode(StatusCodes.Status500InternalServerError, _result);
             }
         }
