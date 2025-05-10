@@ -87,7 +87,7 @@ namespace Proje.API.Controllers
 
         // POST: api/Product
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ProductOwner")]
         public async Task<ActionResult<ResultDTO>> CreateProduct(ProductDTO productDto)
         {
             if (!ModelState.IsValid)
@@ -137,7 +137,7 @@ namespace Proje.API.Controllers
 
         // PUT: api/Product/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin ProductOwner")]
         public async Task<ActionResult<ResultDTO>> UpdateProduct(int id, ProductDTO productDto)
         {
             if (!ModelState.IsValid)
@@ -193,7 +193,7 @@ namespace Proje.API.Controllers
 
         // DELETE: api/Product/5
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ProductOwner")]
         public async Task<ActionResult<ResultDTO>> DeleteProduct(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
