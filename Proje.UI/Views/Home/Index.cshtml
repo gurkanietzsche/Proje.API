@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Proje.UI.Models.DTOs.ProductDTO>
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="jumbotron">
+    <h1 class="display-4">Ürün Satış Portalı</h1>
+    <p class="lead">En kaliteli ürünler, en uygun fiyatlarla</p>
+    <hr class="my-4">
+    <p>Ürün kataloğumuzu keşfedin ve alışverişin keyfini çıkarın.</p>
+    <a class="btn btn-primary btn-lg" href="@Url.Action("Index", "Product")" role="button">Tüm Ürünler</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>Öne Çıkan Ürünler</h2>
+        <hr />
+    </div>
+</div>
+
+<div class="row">
+    @if (Model != null && Model.Any())
+    {
+        foreach (var product in Model)
+        {
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img class="card-img-top" src="@product.ImageUrl" alt="@product.Name">
+                    <div class="card-body">
+                        <h5 class="card-title">@product.Name</h5>
+                        <p class="card-text">@(product.Description.Length > 100 ? product.Description.Substring(0, 97) + "..." : product.Description)</p>
+                        <p class="card-text text-success font-weight-bold">@product.Price.ToString("C2")</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="@Url.Action("Details", "Product", new { id = product.Id })" class="btn btn-primary">Detaylar</a>
+                        <button class="btn btn-success add-to-cart" data-id="@product.Id">Sepete Ekle</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <p class="text-center">Henüz ürün bulunmamaktadır.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart').on('click', function() {
+                var productId = $(this).data('id');
+
+                $.ajax({
+                    url: '/Cart/AddToCart',
+                    type: 'POST',
+                    data: { productId: productId, quantity: 1 },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Ürün sepete eklendi!');
+                        } else {
+                            alert('Ürün sepete eklenirken bir hata oluştu: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        if (xhr.status === 401) {
+                            // Kullanıcı giriş yapmamış
+                            if (confirm('Bu işlemi gerçekleştirmek için giriş yapmanız gerekmektedir. Giriş sayfasına yönlendirilmek ister misiniz?')) {
+                                window.location.href = '/Account/Login';
+                            }
+                        } else {
+                            alert('Ürün sepete eklenirken bir hata oluştu: ' + error);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}

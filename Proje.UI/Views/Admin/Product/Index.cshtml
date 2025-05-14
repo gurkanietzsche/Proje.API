@@ -1,0 +1,191 @@
+﻿@{
+    ViewData["Title"] = "Ürünler";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Ürünler</h1>
+    <a href="/Admin/Product/Create" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-plus fa-sm text-white-50"></i> Yeni Ürün
+    </a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Ürün Listesi</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="productTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Resim</th>
+                        <th>Ürün Adı</th>
+                        <th>Kategori</th>
+                        <th>Fiyat</th>
+                        <th>Stok</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ürünler AJAX ile yüklenecek -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Stok Güncelleme Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1" role="dialog" aria-labelledby="stockModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockModalLabel">Stok Güncelle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="stockProductId">
+                <div class="form-group">
+                    <label for="stockQuantity">Stok Miktarı</label>
+                    <input type="number" class="form-control" id="stockQuantity" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="updateStock">Güncelle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadProducts();
+
+            function loadProducts() {
+                $.ajax({
+                    url: '/Admin/Product/List',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            let tableBody = '';
+                            $.each(response.data, function(index, product) {
+                                tableBody += `
+                                    <tr>
+                                        <td>${product.id}</td>
+                                        <td>
+                                            <img src="${product.imageUrl}" alt="${product.name}" width="50">
+                                        </td>
+                                        <td>${product.name}</td>
+                                        <td>${product.categoryName}</td>
+                                        <td>${product.price.toFixed(2)} ₺</td>
+                                        <td>${product.stock}</td>
+                                        <td>
+                                            <span class="badge badge-${product.isActive ? 'success' : 'danger'}">
+                                                ${product.isActive ? 'Aktif' : 'Pasif'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-info btn-sm update-stock" data-id="${product.id}" data-stock="${product.stock}">
+                                                <i class="fas fa-boxes"></i>
+                                            </button>
+                                            <a href="/Admin/Product/Edit/${product.id}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-danger btn-sm delete-product" data-id="${product.id}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+
+                            $('#productTable tbody').html(tableBody);
+
+                            // Datatables initialization
+                            if ($.fn.DataTable.isDataTable('#productTable')) {
+                                $('#productTable').DataTable().destroy();
+                            }
+
+                            $('#productTable').DataTable({
+                                language: {
+                                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/tr.json'
+                                }
+                            });
+                        } else {
+                            alert('Ürünler yüklenirken bir hata oluştu: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Ürünler yüklenirken bir hata oluştu: ' + error);
+                    }
+                });
+            }
+
+            // Ürün silme işlemi
+            $(document).on('click', '.delete-product', function() {
+                if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
+                    let productId = $(this).data('id');
+
+                    $.ajax({
+                        url: '/Admin/Product/Delete/' + productId,
+                        type: 'POST',
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.success) {
+                                alert('Ürün başarıyla silindi.');
+                                loadProducts();
+                            } else {
+                                alert('Ürün silinirken bir hata oluştu: ' + response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Ürün silinirken bir hata oluştu: ' + error);
+                        }
+                    });
+                }
+            });
+
+            // Stok güncelleme modal
+            $(document).on('click', '.update-stock', function() {
+                let productId = $(this).data('id');
+                let currentStock = $(this).data('stock');
+
+                $('#stockProductId').val(productId);
+                $('#stockQuantity').val(currentStock);
+                $('#stockModal').modal('show');
+            });
+
+            // Stok güncelleme işlemi
+            $('#updateStock').on('click', function() {
+                let productId = $('#stockProductId').val();
+                let newStock = $('#stockQuantity').val();
+
+                $.ajax({
+                    url: '/Admin/Product/UpdateStock/' + productId,
+                    type: 'POST',
+                    data: { stock: newStock },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Stok başarıyla güncellendi.');
+                            $('#stockModal').modal('hide');
+                            loadProducts();
+                        } else {
+                            alert('Stok güncellenirken bir hata oluştu: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Stok güncellenirken bir hata oluştu: ' + error);
+                    }
+                });
+            });
+        });
+    </script>
+}

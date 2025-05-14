@@ -1,0 +1,16 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Hata";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Hata</h1>
+    <p>Bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+
+    @if (Model.ShowRequestId)
+    {
+        <p>
+            <strong>İstek ID:</strong> <code>@Model.RequestId</code>
+        </p>
+    }
+</div>

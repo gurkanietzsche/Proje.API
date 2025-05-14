@@ -1,0 +1,141 @@
+﻿@model Proje.UI.Models.DTOs.OrderDTO
+@{
+    ViewData["Title"] = "Sipariş Detayı #" + Model.Id;
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Ana Sayfa</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Siparişlerim</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Sipariş #@Model.Id</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Sipariş Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Sipariş No:</strong> #@Model.Id</p>
+                <p><strong>Sipariş Tarihi:</strong> @Model.OrderDate.ToString("dd.MM.yyyy HH:mm")</p>
+                <p>
+                    <strong>Sipariş Durumu:</strong>
+                    @switch (Model.Status)
+                    {
+                        case "Beklemede":
+                                    <span class="badge badge-warning">Beklemede</span>
+                            break;
+                        case "İşleniyor":
+                                    <span class="badge badge-info">İşleniyor</span>
+                            break;
+                        case "Kargoya Verildi":
+                                    <span class="badge badge-primary">Kargoya Verildi</span>
+                            break;
+                        case "Teslim Edildi":
+                                    <span class="badge badge-success">Teslim Edildi</span>
+                            break;
+                        case "İptal Edildi":
+                                    <span class="badge badge-danger">İptal Edildi</span>
+                            break;
+                        default:
+                                    <span class="badge badge-secondary">@Model.Status</span>
+                            break;
+                    }
+                </p>
+                <p>
+                    <strong>Ödeme Durumu:</strong>
+                    @if (Model.IsPaid)
+                    {
+                            <span class="badge badge-success">Ödendi</span>
+                    }
+                    else
+                    {
+                            <span class="badge badge-warning">Ödenmedi</span>
+                    }
+                </p>
+                <p><strong>Ödeme Yöntemi:</strong> @Model.PaymentMethod</p>
+                @if (Model.IsPaid && Model.PaymentDate.HasValue)
+                {
+                        <p><strong>Ödeme Tarihi:</strong> @Model.PaymentDate.Value.ToString("dd.MM.yyyy HH:mm")</p>
+                }
+                <p><strong>Toplam Tutar:</strong> @Model.TotalAmount.ToString("C2")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Teslimat Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <address>
+                    <strong>Adres:</strong><br>
+                    @Model.Address<br>
+                    @Model.PostalCode @Model.City<br>
+                    @Model.Country
+                </address>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Sipariş Öğeleri</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th>Birim Fiyat</th>
+                                <th>Adet</th>
+                                <th>Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OrderItems != null && Model.OrderItems.Any())
+                            {
+                                foreach (var item in Model.OrderItems)
+                                {
+                                            <tr>
+                                                <td>
+                                                    <a href="@Url.Action("Details", "Product", new { id = item.ProductId })">
+                                                @item.ProductName
+                                                    </a>
+                                                </td>
+                                                <td>@item.UnitPrice.ToString("C2")</td>
+                                                <td>@item.Quantity</td>
+                                                <td>@item.Subtotal.ToString("C2")</td>
+                                            </tr>
+                                }
+                            }
+                            else
+                            {
+                                    <tr>
+                                        <td colspan="4" class="text-center">Sipariş öğesi bulunamadı.</td>
+                                    </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Toplam:</strong></td>
+                                <td><strong>@Model.TotalAmount.ToString("C2")</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
