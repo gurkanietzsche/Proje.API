@@ -1,16 +1,109 @@
 ﻿@model ErrorViewModel
-@{
-    ViewData["Title"] = "Hata";
+@
+{
+
+    ViewData
+[
+"Title"
+]
+ 
+=
+ 
+"Hata"
+;
+
 }
 
-<div class="text-center">
-    <h1 class="display-4">Hata</h1>
-    <p>Bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
 
-    @if (Model.ShowRequestId)
-    {
-        <p>
-            <strong>İstek ID:</strong> <code>@Model.RequestId</code>
-        </p>
-    }
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h1 class="text-danger">Hata!</h1>
+        <h2 class="text-danger">İşlem sırasında bir hata oluştu.</h2>
+
+        
+@if
+ 
+(
+!
+string
+.
+IsNullOrEmpty
+(
+Model
+.
+ErrorMessage
+)
+)
+
+        
+{
+
+            
+<
+p
+>
+@
+Model
+.
+ErrorMessage
+</
+p
+>
+
+        
+}
+
+
+        
+@if
+ 
+(
+Model
+.
+ShowRequestId
+)
+
+        
+{
+
+            
+<
+p
+>
+
+                
+<
+strong
+>
+İstek ID:
+</
+strong
+>
+ 
+<
+code
+>
+@
+Model
+.
+RequestId
+</
+code
+>
+
+            
+</
+p
+>
+
+        
+}
+
+    </div>
+    
+    <div class="mt-4">
+        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+            <i class="bi bi-house"></i> Ana Sayfaya Dön
+        </a>
+    </div>
 </div>
