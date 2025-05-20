@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "Kullanıcılar";
+}
+
+<div class="row">
+    <div class="col-md-8" id="divList">
+        <div class="card">
+            <div class="card-header">
+                <h3>Kullanıcılar</h3>
+            </div>
+            <div class="card-body">
+                <table class="table" id="tbUsersList">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı Adı</th>
+                            <th>E-posta</th>
+                            <th>Roller</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="card-footer"></div>
+        </div>
+    </div>
+    <div class="col-md-4" id="divAddUpdate">
+        <div class="card">
+            <div class="card-header"><h4>Kullanıcı Rol Ataması</h4></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label>Kullanıcı Adı</label>
+                    <input type="hidden" class="form-control" id="txtId" />
+                    <input type="text" class="form-control" id="txtUserName" readonly />
+                </div>
+                <div class="mb-3">
+                    <label>E-posta</label>
+                    <input type="text" class="form-control" id="txtEmail" readonly />
+                </div>
+                <div class="mb-3">
+                    <label>Roller</label>
+                    <select id="cbUserRoles" class="form-control" multiple>
+                        <option value="Admin">Admin</option>
+                        <option value="User">User</option>
+                        <option value="ProductOwner">Ürün Yöneticisi</option>
+                        <option value="Seller">Satıcı</option>
+                    </select>
+                    <small class="form-text text-muted">Ctrl tuşu ile birden fazla rol seçebilirsiniz.</small>
+                </div>
+                <div class="mb-3">
+                    <button class="btn btn-primary" id="btnAssignRole">Rol Ata</button>
+                    <button class="btn btn-secondary" id="btnCancel">Vazgeç</button>
+                    <div class="alert mt-3" id="divResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function(){
+            var apiBaseUrl = "@ViewBag.ApiBaseURL";
+            if(localStorage.getItem("token") == "" || localStorage.getItem("token") == null){
+                location.href = "/Login";
+                return false;
+            }
+
+            var token = localStorage.getItem("token");
+            var userRoles = localStorage.getItem("userRoles") ? localStorage.getItem("userRoles").split(", ") : [];
+
+            // Sadece Admin rolüne sahip kullanıcılar bu sayfayı görebilmeli
+            if (!userRoles.includes("Admin")) {
+                location.href = "/";
+                return false;
+            }
+
+            GetUsersList();
+            $("#divAddUpdate").hide();
+
+            function GetUsersList(){
+                $.ajax({
+                    url: apiBaseUrl + "/Account/users",
+                    type: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    success: function (d) {
+                        if (d.status && d.data) {
+                            UsersToTable(d.data);
+                        }
+                    },
+                    error: function (d) {
+                        if(d.status === 401) {
+                            localStorage.removeItem("token");
+                            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                            location.href = "/Login";
+                        }
+                    },
+                });
+            }
+
+            function UsersToTable(data){
+                $("#tbUsersList tbody").empty();
+                var row = "";
+                $.each(data, function(i, item){
+                    row += "<tr>";
+                    row += "<td>" + item.username + "</td>";
+                    row += "<td>" + item.email + "</td>";
+                    row += "<td>" + (item.roles ? item.roles.join(", ") : "-") + "</td>";
+                    row += '<td><button class="btn btn-warning btn-circle btnEditUser" data-id="' + item.id + '"><i class="fa fa-edit"></i></button></td>';
+                    row += "</tr>";
+                });
+                $("#tbUsersList tbody").append(row);
+            }
+
+            $(document).on("click", ".btnEditUser", function(){
+                var id = $(this).attr("data-id");
+                $.ajax({
+                    url: apiBaseUrl + "/Account/users/" + id,
+                    type: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    success: function (d) {
+                        if (d.status && d.data) {
+                            var userData = d.data;
+                            $("#txtId").val(userData.id);
+                            $("#txtUserName").val(userData.username);
+                            $("#txtEmail").val(userData.email);
+
+                            // Rolleri seçili hale getir
+                            $("#cbUserRoles option").prop("selected", false);
+                            if (userData.roles && userData.roles.length > 0) {
+                                $.each(userData.roles, function(i, role) {
+                                    $("#cbUserRoles option[value='" + role + "']").prop("selected", true);
+                                });
+                            }
+
+                            $("#divAddUpdate").show();
+                        }
+                    },
+                    error: function (d) {},
+                });
+            });
+
+            $("#btnCancel").click(function(){
+                $("#divAddUpdate").hide();
+                $("#txtId").val("");
+                $("#txtUserName").val("");
+                $("#txtEmail").val("");
+                $("#cbUserRoles option").prop("selected", false);
+            });
+
+            $("#btnAssignRole").click(function(){
+                var id = $("#txtId").val();
+                var username = $("#txtUserName").val();
+                var selectedRoles = [];
+
+                $("#cbUserRoles option:selected").each(function() {
+                    selectedRoles.push($(this).val());
+                });
+
+                if (selectedRoles.length === 0) {
+                    $("#divResult")
+                        .fadeIn()
+                        .removeClass()
+                        .addClass("alert alert-danger mt-3")
+                        .html("En az bir rol seçmelisiniz!")
+                        .fadeOut(3000);
+                    return false;
+                }
+
+                var assignRole = {
+                    username: username,
+                    roles: selectedRoles
+                };
+
+                $.ajax({
+                    url: apiBaseUrl + "/Account/assign-role",
+                    type: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify(assignRole),
+                    contentType: "application/json",
+                    success: function (d) {
+                        if (d.status) {
+                            $("#divResult")
+                                .fadeIn()
+                                .removeClass()
+                                .addClass("alert alert-success mt-3")
+                                .html(d.message)
+                                .fadeOut(3000);
+                            GetUsersList();
+                            $("#btnCancel").click();
+                        } else {
+                            $("#divResult")
+                                .fadeIn()
+                                .removeClass()
+                                .addClass("alert alert-danger mt-3")
+                                .html(d.message)
+                                .fadeOut(3000);
+                        }
+                    },
+                    error: function (d) {},
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,46 @@
+﻿<script>
+    $(document).ready(function(){
+        var apiBaseUrl = "@ViewBag.ApiBaseURL";
+
+        $("#btnRegister").click(function(){
+            if($("#txtUserName").val() == "" || $("#txtEmail").val() == "" || $("#txtPassword").val() == ""){
+                showNotification("Tüm alanları doldurunuz!", "error");
+                return false;
+            }
+
+            var register = {
+                Username: $("#txtUserName").val(),
+                Email: $("#txtEmail").val(),
+                Password: $("#txtPassword").val()
+            };
+
+            $.ajax({
+                url: apiBaseUrl + "/Account/register",
+                type: "POST",
+                data: JSON.stringify(register),
+                contentType: "application/json",
+                success: function (d) {
+                    if (d.status){
+                        showNotification("Kayıt işlemi başarılı, giriş sayfasına yönlendiriliyorsunuz...", "success");
+
+                        setTimeout(function() {
+                            location.href = "/Login";
+                        }, 2000);
+                    } else {
+                        showNotification(d.message, "error");
+                    }
+                },
+                error: function (d) {
+                    showNotification("Bağlantı hatası oluştu!", "error");
+                }
+            });
+        });
+
+        // Enter tuşuna basılınca kayıt ol
+        $("#txtPassword").on("keypress", function (e) {
+            if (e.which === 13) {
+                $("#btnRegister").click();
+            }
+        });
+    });
+</script>

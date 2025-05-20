@@ -2,9 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Proje.API.Data;
-using Proje.API.Mapping;
+using Proje.API.Models;
 using Proje.API.Repositories;
 using Proje.API.Services;
 using System.Text;
@@ -12,18 +11,16 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
-
-// Add DbContext
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
-// Add Identity
+// Identity ayarlarý
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// Add Authentication
+// JWT yapýlandýrmasý
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -34,144 +31,48 @@ builder.Services.AddAuthentication(options =>
 {
     options.SaveToken = true;
     options.RequireHttpsMetadata = false;
-    options.TokenValidationParameters = new TokenValidationParameters
+    options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-        ClockSkew = TimeSpan.Zero
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
 
-// Add AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
-
-// Register Repositories
+// Servisler ve repository'ler
+builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<CartRepository>();
 builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<ProductReviewRepository>();
 builder.Services.AddScoped<QuestionRepository>();
 builder.Services.AddScoped<AnswerRepository>();
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
-// Register Services
-builder.Services.AddScoped<ITokenService, TokenService>();
-
-// Add CORS
+// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
-// Add Swagger
+builder.Services.AddControllers();
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Proje API", Version = "v1" });
-
-    // Swagger JSON örneklerini geliþtirme
-    c.UseInlineDefinitionsForEnums();
-
-    // Aþaðýdaki satýrý ekleyin (isteðe baðlý)
-    c.SupportNonNullableReferenceTypes();
-
-    // JWT kimlik doðrulama için
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme.",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-// Seed data iþlemi - Admin kullanýcý ve roller oluþturma
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-        // Rolleri oluþtur
-        if (!await roleManager.RoleExistsAsync("Admin"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-        }
-
-        if (!await roleManager.RoleExistsAsync("User"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("User"));
-        }
-
-        // Admin kullanýcýsýný oluþtur
-        var username = "gurkanietzsche";
-        var adminUser = await userManager.FindByNameAsync(username);
-
-        if (adminUser == null)
-        {
-            adminUser = new IdentityUser
-            {
-                UserName = username,
-                Email = "admin@example.com",
-                EmailConfirmed = true
-            };
-
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
-                Console.WriteLine($"Admin kullanýcýsý ({username}) baþarýyla oluþturuldu");
-            }
-            else
-            {
-                Console.WriteLine($"Admin kullanýcýsý oluþturulurken hata: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Admin kullanýcýsý ({username}) zaten mevcut");
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Seed iþleminde bir hata oluþtu");
-        Console.WriteLine($"Seed iþleminde hata: {ex.Message}");
-    }
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -182,12 +83,64 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Use CORS
+// Static dosyalara eriþim
+app.UseStaticFiles();
+
+// CORS
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Admin kullanýcýsý oluþtur
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    // Admin rolü yoksa oluþtur
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+    }
+
+    // User rolü yoksa oluþtur
+    if (!await roleManager.RoleExistsAsync("User"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("User"));
+    }
+
+    // ProductOwner rolü yoksa oluþtur
+    if (!await roleManager.RoleExistsAsync("ProductOwner"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("ProductOwner"));
+    }
+
+    // Seller rolü yoksa oluþtur
+    if (!await roleManager.RoleExistsAsync("Seller"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Seller"));
+    }
+
+    // Admin kullanýcýsý yoksa oluþtur
+    var adminUser = await userManager.FindByNameAsync("admin");
+    if (adminUser == null)
+    {
+        adminUser = new IdentityUser
+        {
+            UserName = "admin",
+            Email = "admin@example.com",
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+    }
+}
 
 app.Run();

@@ -1,168 +1,167 @@
-﻿@{
-    ViewData["Title"] = "Profil";
-}
+﻿@section Scripts {
+<script>
+    $(document).ready(function () {
+        var apiBaseUrl = "@ViewBag.ApiBaseURL";
+        var token = localStorage.getItem("token");
+        if (token == "" || token == null) {
+            location.href = "/Login";
+            return false;
+        }
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header"><h3>Kullanıcı Bilgileri</h3></div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <label>Adı Soyadı</label>
-                    <input type="text" id="txtFullName" class="form-control" />
-                </div>
-                <div class="mb-2">
-                    <label>Kullanıcı Adı</label>
-                    <input type="text" id="txtUserName" class="form-control" readonly="readonly" />
-                </div>
-                <div class="mb-2">
-                    <label>E-Posta</label>
-                    <input type="text" id="txtEmail" class="form-control" />
-                </div>
-                <div class="mb-2">
-                    <label>Telefon</label>
-                    <input type="text" id="txtPhone" class="form-control" />
-                </div>
-                <button class="btn btn-primary" id="btnSave">Kaydet</button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header"><h3>Profil Fotoğrafı</h3></div>
-            <div class="card-body">
-                <img src="" id="userPicture" class="img-profile rounded-circle" style="width:300px" />
-                <input id="fileInput" type="file" accept="image/gif, image/jpeg, image/png" class="btn btn-primary" />
-                <div id="divResult"></div>
-            </div>
-        </div>
-    </div>
-</div>
+        var userId = localStorage.getItem("userId");
+        var userName = localStorage.getItem("userName");
 
-@section Scripts {
-    <script>
-        $(document).ready(function () {
-            var token = localStorage.getItem("token");
-            if (token == "" || token == null) {
-                location.href = "/Login";
-                return false;
-            }
+        GetUserInfo();
 
-            var apiBaseUrl = "@ViewBag.ApiBaseUrl";
-            var userId = localStorage.getItem("userId");
-            GetUserInfo();
+        function GetUserInfo() {
+            // Kullanıcı adını dolduralım
+            $("#txtUserName").val(userName);
 
-            function GetUserInfo() {
-                $.ajax({
-                    url: apiBaseUrl + "/User/GetById/" + userId,
-                    type: "Get",
-                    contentType: "application/json",
-                    headers: {
-                        "Authorization": "Bearer " + token
-                    },
-                    success: function (data) {
-                        $("#userPicture").attr("src", apiBaseUrl + "/Files/UserPhotos/" + data.photoUrl);
-                        $("#txtFullName").val(data.fullName);
-                        $("#txtUserName").val(data.userName);
-                        $("#txtEmail").val(data.email);
-                        $("#txtPhone").val(data.phoneNumber);
-                    },
-                    error: function () { }
-                });
-            }
+            // Profil bilgilerini getirelim
+            $.ajax({
+                url: apiBaseUrl + "/Account/profile",
+                type: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                success: function (data) {
+                    if (data.status && data.data) {
+                        var userData = data.data;
+                        var userPhoto = userData.photoUrl || "profil.jpg";
+                        var photoUrl = userPhoto.startsWith("http") ? userPhoto : apiBaseUrl + "/images/users/" + userPhoto;
 
-            $("#fileInput").change(function () {
-                var files = $(this).prop('files');
-                console.log(files);
-                if (files && files[0]) {
-                    var picExt = ".jpg";
-                    var reader = new FileReader();
-                    reader.onload = function (e) {
-                        $('#userPicture').attr('src', e.target.result);
-                        UserPicUpdate(e.target.result, picExt);
-                    };
-                    reader.readAsDataURL(files[0]);
+                        $("#userPicture").attr("src", photoUrl);
+                        $("#txtEmail").val(userData.email || "");
+                        $("#txtPhone").val(userData.phoneNumber || "");
+                    }
+                },
+                error: function (d) {
+                    if(d.status === 401) {
+                        localStorage.removeItem("token");
+                        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        location.href = "/Login";
+                    } else {
+                        showNotification("Profil bilgileri yüklenirken bir hata oluştu", "error");
+                    }
                 }
             });
+        }
 
-            function UserPicUpdate(picData, picExt) {
-                var upload = new Object();
-                upload.picData = picData;
-                upload.picExt = picExt;
-                upload.userId = userId;
+        $("#fileInput").change(function () {
+            var files = $(this).prop('files');
+            if (files && files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#userPicture').attr('src', e.target.result);
+                    var fileData = e.target.result;
 
-                $.ajax({
-                    url: apiBaseUrl + "/User/Upload/",
-                    type: "Post",
-                    contentType: "application/json",
-                    headers: {
-                        "Authorization": "Bearer " + token
-                    },
-                    data: JSON.stringify(upload),
-                    success: function (data) {
-                        console.log(data);
-                        if (data.status) {
-                            $("#divResult")
-                                .show()
-                                .removeClass()
-                                .addClass("alert alert-success")
-                                .html(data.message)
-                                .fadeOut(5000);
-                        } else {
-                            $("#divResult")
-                                .show()
-                                .removeClass()
-                                .addClass("alert alert-danger")
-                                .html(data.message)
-                                .fadeOut(5000);
-                        }
-                    },
-                    error: function () { }
-                });
+                    // Dosya uzantısını belirle
+                    var fileExtension = files[0].name.split('.').pop().toLowerCase();
+                    UserPhotoUpdate(fileData, fileExtension);
+                };
+                reader.readAsDataURL(files[0]);
             }
+        });
 
-            $("#btnSave").click(function () {
-                var fullName = $("#txtFullName").val();
-                var userName = $("#txtUserName").val();
-                var email = $("#txtEmail").val();
-                var phoneNumber = $("#txtPhone").val();
+        function UserPhotoUpdate(picData, picExt) {
+            var upload = {
+                userId: userId,
+                picData: picData,
+                picExt: "." + picExt
+            };
 
-                var register = new Object();
-                register.FullName = fullName;
-                register.UserName = userName;
-                register.Email = email;
-                register.PhoneNumber = phoneNumber;
-                register.Id = userId;
+            $.ajax({
+                url: apiBaseUrl + "/Account/upload-photo",
+                type: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(upload),
+                contentType: "application/json",
+                success: function (data) {
+                    if (data.status) {
+                        showNotification("Profil fotoğrafı başarıyla güncellendi", "success");
 
-                $.ajax({
-                    url: apiBaseUrl + "/User/Update",
-                    type: "Put",
-                    contentType: "application/json",
-                    headers: {
-                        "Authorization": "Bearer " + token
-                    },
-                    data: JSON.stringify(register),
-                    success: function (data) {
-                        console.log(data);
-                        if (data.status) {
-                            $("#divResult")
-                                .show()
-                                .removeClass()
-                                .addClass("alert alert-success")
-                                .html(data.message)
-                                .fadeOut(5000);
-                        } else {
-                            $("#divResult")
-                                .show()
-                                .removeClass()
-                                .addClass("alert alert-danger")
-                                .html(data.message)
-                                .fadeOut(5000);
-                        }
-                    },
-                    error: function () { }
-                });
+                        // Profil fotoğrafını güncelleyelim
+                        localStorage.setItem("userPhoto", data.data || "profil.jpg");
+                    } else {
+                        showNotification(data.message, "error");
+                    }
+                },
+                error: function () {
+                    showNotification("Fotoğraf yüklenirken bir hata oluştu", "error");
+                }
+            });
+        }
+
+        $("#btnSave").click(function () {
+            var email = $("#txtEmail").val();
+            var phoneNumber = $("#txtPhone").val();
+
+            var update = {
+                email: email,
+                phoneNumber: phoneNumber
+            };
+
+            $.ajax({
+                url: apiBaseUrl + "/Account/profile",
+                type: "PUT",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(update),
+                contentType: "application/json",
+                success: function (data) {
+                    if (data.status) {
+                        showNotification("Profil bilgileri başarıyla güncellendi", "success");
+                    } else {
+                        showNotification(data.message, "error");
+                    }
+                },
+                error: function () {
+                    showNotification("Bilgiler güncellenirken bir hata oluştu", "error");
+                }
             });
         });
-    </script>
+
+        $("#btnChangePassword").click(function() {
+            var currentPassword = $("#txtCurrentPassword").val();
+            var newPassword = $("#txtNewPassword").val();
+
+            if (!currentPassword || !newPassword) {
+                showNotification("Mevcut şifre ve yeni şifre alanlarını doldurunuz", "error");
+                return;
+            }
+
+            var changePassword = {
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            };
+
+            $.ajax({
+                url: apiBaseUrl + "/Account/change-password",
+                type: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                data: JSON.stringify(changePassword),
+                contentType: "application/json",
+                success: function (data) {
+                    if (data.status) {
+                        showNotification("Şifre başarıyla değiştirildi", "success");
+
+                        // Şifre alanlarını temizle
+                        $("#txtCurrentPassword").val("");
+                        $("#txtNewPassword").val("");
+                    } else {
+                        showNotification(data.message, "error");
+                    }
+                },
+                error: function () {
+                    showNotification("Şifre değiştirilirken bir hata oluştu", "error");
+                }
+            });
+        });
+    });
+</script>
 }

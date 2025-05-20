@@ -1,0 +1,280 @@
+﻿@{
+    ViewData["Title"] = "Siparişler";
+}
+
+<div class="row">
+    <div class="col-md-12" id="divList">
+        <div class="card">
+            <div class="card-header">
+                <h3>Siparişler</h3>
+            </div>
+            <div class="card-body">
+                <table class="table" id="tbOrdersList">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Kullanıcı</th>
+                            <th>Tarih</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                            <th>Ödeme</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="card-footer"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Sipariş Detay Modal -->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h3 class="modal-title" id="orderModalLabel">Sipariş Detayı</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h4>Sipariş Bilgileri</h4>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Sipariş No:</strong></td>
+                                <td id="orderDetailId"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tarih:</strong></td>
+                                <td id="orderDetailDate"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durum:</strong></td>
+                                <td>
+                                    <select id="orderDetailStatus" class="form-control">
+                                        <option value="Beklemede">Beklemede</option>
+                                        <option value="İşlemde">İşlemde</option>
+                                        <option value="Kargoya Verildi">Kargoya Verildi</option>
+                                        <option value="Teslim Edildi">Teslim Edildi</option>
+                                        <option value="İptal Edildi">İptal Edildi</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ödeme:</strong></td>
+                                <td id="orderDetailPayment"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Toplam:</strong></td>
+                                <td id="orderDetailTotal"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Teslimat Bilgileri</h4>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Adres:</strong></td>
+                                <td id="orderDetailAddress"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Şehir:</strong></td>
+                                <td id="orderDetailCity"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Posta Kodu:</strong></td>
+                                <td id="orderDetailPostalCode"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ülke:</strong></td>
+                                <td id="orderDetailCountry"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <h4>Sipariş Ürünleri</h4>
+                <table class="table" id="tbOrderItems">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Birim Fiyat</th>
+                            <th>Adet</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <button id="btnUpdateOrderStatus" class="btn btn-success">Sipariş Durumunu Güncelle</button>
+                <div id="divResultModal" class="alert mt-3" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function(){
+            var apiBaseUrl = "@ViewBag.ApiBaseURL";
+            var token = localStorage.getItem("token");
+            var currentOrderId = 0;
+
+            if(token == "" || token == null){
+                location.href = "/Login";
+                return false;
+            }
+
+            var userRoles = localStorage.getItem("userRoles") ? localStorage.getItem("userRoles").split(", ") : [];
+
+            // Sadece Admin rolüne sahip kullanıcılar bu sayfayı görebilmeli
+            if (!userRoles.includes("Admin")) {
+                location.href = "/";
+                return false;
+            }
+
+            GetOrdersList();
+
+            function GetOrdersList(){
+                $.ajax({
+                    url: apiBaseUrl + "/Order",
+                    type: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    success: function (d) {
+                        OrdersToTable(d);
+                    },
+                    error: function (d) {
+                        if(d.status === 401) {
+                            localStorage.removeItem("token");
+                            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                            location.href = "/Login";
+                        }
+                    },
+                });
+            }
+
+            function OrdersToTable(data){
+                $("#tbOrdersList tbody").empty();
+                var row = "";
+                $.each(data, function(i, item){
+                    var bg = "";
+                    switch(item.status) {
+                        case "Beklemede": bg = "bg-warning"; break;
+                        case "İşlemde": bg = "bg-info"; break;
+                        case "Kargoya Verildi": bg = "bg-primary"; break;
+                        case "Teslim Edildi": bg = "bg-success"; break;
+                        case "İptal Edildi": bg = "bg-danger"; break;
+                        default: bg = "bg-secondary";
+                    }
+
+                    var paymentStatus = item.isPaid ? "Ödendi" : "Bekliyor";
+                    var paymentBg = item.isPaid ? "bg-success" : "bg-warning";
+
+                    row += "<tr>";
+                    row += "<td>#" + item.id + "</td>";
+                    row += "<td>" + item.userName + "</td>";
+                    row += "<td>" + FormatDate(item.orderDate) + "</td>";
+                    row += "<td>" + item.totalAmount + " ₺</td>";
+                    row += "<td><span class='text-white badge " + bg + "'>" + item.status + "</span></td>";
+                    row += "<td><span class='text-white badge " + paymentBg + "'>" + paymentStatus + "</span></td>";
+                    row += '<td><button class="btn btn-info btn-circle btnOrderDetail" data-id="' + item.id + '"><i class="fa fa-search"></i></button></td>';
+                    row += "</tr>";
+                });
+                $("#tbOrdersList tbody").append(row);
+            }
+
+            // Tarih format fonksiyonu
+            function FormatDate(dateString) {
+                if (!dateString) return "";
+                var date = new Date(dateString);
+                return date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR');
+            }
+
+            $(document).on("click", ".btnOrderDetail", function(){
+                var id = $(this).attr("data-id");
+                currentOrderId = id;
+
+                $.ajax({
+                    url: apiBaseUrl + "/Order/" + id,
+                    type: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    success: function (d) {
+                        // Sipariş bilgilerini doldur
+                        $("#orderDetailId").text("#" + d.id);
+                        $("#orderDetailDate").text(FormatDate(d.orderDate));
+                        $("#orderDetailStatus").val(d.status);
+                        $("#orderDetailPayment").text(d.isPaid ? "Ödendi" : "Bekliyor");
+                        $("#orderDetailTotal").text(d.totalAmount + " ₺");
+
+                        // Teslimat bilgilerini doldur
+                        $("#orderDetailAddress").text(d.address);
+                        $("#orderDetailCity").text(d.city);
+                        $("#orderDetailPostalCode").text(d.postalCode);
+                        $("#orderDetailCountry").text(d.country);
+
+                        // Ürünleri listele
+                        $("#tbOrderItems tbody").empty();
+                        var itemRow = "";
+                        $.each(d.orderItems, function(i, item){
+                            itemRow += "<tr>";
+                            itemRow += "<td>" + item.productName + "</td>";
+                            itemRow += "<td>" + item.unitPrice + " ₺</td>";
+                            itemRow += "<td>" + item.quantity + "</td>";
+                            itemRow += "<td>" + (item.quantity * item.unitPrice) + " ₺</td>";
+                            itemRow += "</tr>";
+                        });
+                        $("#tbOrderItems tbody").append(itemRow);
+
+                        // Modalı göster
+                        $("#orderModal").modal("show");
+                    },
+                    error: function (d) {},
+                });
+            });
+
+            $("#btnUpdateOrderStatus").click(function(){
+                var status = $("#orderDetailStatus").val();
+
+                $.ajax({
+                    url: apiBaseUrl + "/Order/" + currentOrderId + "/status",
+                    type: "PUT",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify({ status: status }),
+                    contentType: "application/json",
+                    success: function (d) {
+                        if (d.status) {
+                            $("#divResultModal")
+                                .fadeIn()
+                                .removeClass()
+                                .addClass("alert alert-success mt-3")
+                                .html(d.message)
+                                .fadeOut(3000);
+
+                            // Sipariş listesini yenile
+                            GetOrdersList();
+                        } else {
+                            $("#divResultModal")
+                                .fadeIn()
+                                .removeClass()
+                                .addClass("alert alert-danger mt-3")
+                                .html(d.message)
+                                .fadeOut(3000);
+                        }
+                    },
+                    error: function (d) {},
+                });
+            });
+        });
+    </script>
+}

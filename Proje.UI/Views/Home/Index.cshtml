@@ -41,17 +41,54 @@
             </div>
         </div>
     </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Toplam Kullanıcı
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="userCount">0</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Siparişler
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="orderCount">0</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
         $(document).ready(function() {
             var apiBaseUrl = "@ViewBag.ApiBaseURL";
-            if(localStorage.getItem("token") == "" || localStorage.getItem("token") == null){
+            var token = localStorage.getItem("token");
+
+            if(!token) {
                 location.href = "/Login";
                 return false;
             }
-            var token = localStorage.getItem("token");
 
             // Kategori sayısını al
             $.ajax({
@@ -61,12 +98,18 @@
                     "Authorization": "Bearer " + token
                 },
                 success: function (d) {
-                    $("#categoryCount").text(d.length);
+                    $("#categoryCount").text(d.length || 0);
                 },
-                error: function (d) {},
+                error: function (d) {
+                    if(d.status === 401) {
+                        localStorage.removeItem("token");
+                        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        location.href = "/Login";
+                    }
+                },
             });
 
-            // Ürün sayısını al (varsayılan kategori)
+            // Ürün sayısını al
             $.ajax({
                 url: apiBaseUrl + "/Product",
                 type: "GET",
@@ -74,9 +117,52 @@
                     "Authorization": "Bearer " + token
                 },
                 success: function (d) {
-                    $("#productCount").text(d.length);
+                    $("#productCount").text(d.length || 0);
                 },
-                error: function (d) {},
+                error: function (d) {
+                    if(d.status === 401) {
+                        localStorage.removeItem("token");
+                        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        location.href = "/Login";
+                    }
+                },
+            });
+
+            // Kullanıcı sayısını al (sadece admin kullanıcılar için)
+            if (localStorage.getItem("userRoles") && localStorage.getItem("userRoles").includes("Admin")) {
+                $.ajax({
+                    url: apiBaseUrl + "/Account/users",
+                    type: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    success: function (d) {
+                        if (d.status && d.data) {
+                            $("#userCount").text(d.data.length || 0);
+                        }
+                    },
+                    error: function (d) {
+                        console.log("Kullanıcı listesi alınamadı");
+                    },
+                });
+            } else {
+                // Admin değilse kullanıcı sayısı kartını gizle
+                $(".col-xl-3.col-md-6.mb-4").eq(2).hide();
+            }
+
+            // Sipariş sayısını al
+            $.ajax({
+                url: apiBaseUrl + "/Order",
+                type: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                success: function (d) {
+                    $("#orderCount").text(d.length || 0);
+                },
+                error: function (d) {
+                    console.log("Sipariş listesi alınamadı");
+                },
             });
         });
     </script>

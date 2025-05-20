@@ -16,6 +16,12 @@ namespace Proje.UI.Controllers
 
         public IActionResult Index()
         {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
             var ApiBaseURL = _configuration["ApiBaseURL"];
             ViewBag.ApiBaseURL = ApiBaseURL;
             return View();
@@ -24,6 +30,12 @@ namespace Proje.UI.Controllers
         [Route("Categories")]
         public IActionResult Categories()
         {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
             var ApiBaseURL = _configuration["ApiBaseURL"];
             ViewBag.ApiBaseURL = ApiBaseURL;
             return View();
@@ -33,12 +45,17 @@ namespace Proje.UI.Controllers
         [Route("Products")]
         public IActionResult Products(int id = 0)
         {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
             var ApiBaseURL = _configuration["ApiBaseURL"];
             ViewBag.ApiBaseURL = ApiBaseURL;
             ViewBag.CatId = id;
             return View();
         }
-
 
         [Route("Login")]
         public IActionResult Login()
@@ -48,9 +65,51 @@ namespace Proje.UI.Controllers
             return View();
         }
 
+        [Route("Register")]
+        public IActionResult Register()
+        {
+            var ApiBaseURL = _configuration["ApiBaseURL"];
+            ViewBag.ApiBaseURL = ApiBaseURL;
+            return View();
+        }
+
         [Route("Profile")]
         public IActionResult Profile()
         {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var ApiBaseURL = _configuration["ApiBaseURL"];
+            ViewBag.ApiBaseURL = ApiBaseURL;
+            return View();
+        }
+
+        [Route("Users")]
+        public IActionResult Users()
+        {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var ApiBaseURL = _configuration["ApiBaseURL"];
+            ViewBag.ApiBaseURL = ApiBaseURL;
+            return View();
+        }
+
+        [Route("Orders")]
+        public IActionResult Orders()
+        {
+            // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+            if (string.IsNullOrEmpty(HttpContext.Request.Cookies["token"]))
+            {
+                return RedirectToAction("Login");
+            }
+
             var ApiBaseURL = _configuration["ApiBaseURL"];
             ViewBag.ApiBaseURL = ApiBaseURL;
             return View();
