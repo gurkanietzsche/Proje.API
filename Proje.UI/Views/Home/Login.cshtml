@@ -38,7 +38,7 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function(){
+                  $(document).ready(function(){
             var apiBaseUrl = "@ViewBag.ApiBaseURL";
 
             // Butonlara tıklama
@@ -80,12 +80,19 @@
                         if(response.status) {
                             // Token bilgisini sakla
                             localStorage.setItem("token", response.data.token);
-                            // Cookie olarak da saklayalım (güvenli)
+                            // Cookie olarak da saklayalım
                             document.cookie = "token=" + response.data.token + "; path=/";
 
                             localStorage.setItem("userName", response.data.username);
                             localStorage.setItem("userId", response.data.id);
-                            localStorage.setItem("userRoles", response.data.roles.join(", "));
+
+                            // Rolleri hazırla
+                            if (Array.isArray(response.data.roles)) {
+                                localStorage.setItem("userRoles", response.data.roles.join(", "));
+                            } else {
+                                localStorage.setItem("userRoles", "User");
+                            }
+
                             localStorage.setItem("userPhoto", "profil.jpg"); // Varsayılan profil resmi
 
                             showNotification("Giriş başarılı, yönlendiriliyorsunuz...", "success");
@@ -100,9 +107,9 @@
                             $("#btnLogin").removeClass("disabled").html("Giriş Yap");
                         }
                     },
-                    error: function(xhr) {
-                        console.error("Giriş hatası:", xhr);
-                        showNotification("Giriş yapılırken bir hata oluştu", "error");
+                    error: function(xhr, status, error) {
+                        console.error("Giriş hatası:", xhr, status, error);
+                        showNotification("Giriş yapılırken bir hata oluştu: " + error, "error");
                         // Giriş butonunu tekrar aktif yap
                         $("#btnLogin").removeClass("disabled").html("Giriş Yap");
                     }

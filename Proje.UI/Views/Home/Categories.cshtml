@@ -77,7 +77,7 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function(){
+               $(document).ready(function(){
             var apiBaseUrl = "@ViewBag.ApiBaseURL";
 
             if(!localStorage.getItem("token")) {
@@ -109,8 +109,9 @@
                         console.log("Kategoriler başarıyla getirildi:", data);
                         CategoryToTable(data);
                     },
-                    error: function (xhr) {
-                        console.error("Kategoriler getirilirken hata oluştu:", xhr);
+                    error: function (xhr, status, error) {
+                        console.error("Kategoriler getirilirken hata oluştu:", xhr, status, error);
+                        showNotification("Kategoriler yüklenirken bir hata oluştu: " + error, "error");
                     }
                 });
             }
@@ -131,8 +132,9 @@
                             $("#cbParentCategory").append('<option value="' + item.id + '">' + item.name + '</option>');
                         });
                     },
-                    error: function (xhr) {
-                        console.error("Üst kategoriler getirilirken hata oluştu:", xhr);
+                    error: function (xhr, status, error) {
+                        console.error("Üst kategoriler getirilirken hata oluştu:", xhr, status, error);
+                        showNotification("Üst kategoriler yüklenirken bir hata oluştu: " + error, "error");
                     }
                 });
             }
@@ -182,10 +184,11 @@
                     url: apiBaseUrl + "/Category",
                     type: "POST",
                     headers: {
-                        "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
                     },
-                    contentType: "application/json",
                     data: JSON.stringify(category),
+                    processData: false,
                     success: function(response) {
                         console.log("Başarılı yanıt:", response);
                         if(response.status) {
@@ -199,8 +202,9 @@
                             showNotification(response.message || "Kategori eklenemedi", "error");
                         }
                     },
-                    error: function(xhr) {
-                        console.error("Kategori eklenirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Kategori eklenirken hata:", xhr, status, error);
+                        showNotification("Kategori eklenirken bir hata oluştu: " + error, "error");
                     }
                 });
             });
@@ -228,8 +232,9 @@
                         $("#btnDelete").show();
                         $("#btnCancel").show();
                     },
-                    error: function(xhr) {
-                        console.error("Kategori getirilirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Kategori getirilirken hata:", xhr, status, error);
+                        showNotification("Kategori bilgileri yüklenirken bir hata oluştu: " + error, "error");
                     }
                 });
             });
@@ -261,8 +266,8 @@
                         "Authorization": "Bearer " + token,
                         "Content-Type": "application/json"
                     },
-                    contentType: "application/json",
                     data: JSON.stringify(category),
+                    processData: false,
                     success: function(response) {
                         if(response.status) {
                             showNotification("Kategori başarıyla güncellendi", "success");
@@ -315,8 +320,9 @@
                                 showNotification(response.message || "Kategori silinemedi", "error");
                             }
                         },
-                        error: function(xhr) {
-                            console.error("Kategori silinirken hata:", xhr);
+                        error: function(xhr, status, error) {
+                            console.error("Kategori silinirken hata:", xhr, status, error);
+                            showNotification("Kategori silinirken bir hata oluştu: " + error, "error");
                         }
                     });
                 }
