@@ -161,53 +161,63 @@
                     $("#tbCategories tbody").append(row);
                 });
             }
+                            // Kategori kaydet
+        $("#btnSave").click(function(e) {
+            e.preventDefault();
 
-            // Kategori kaydet
-            $("#btnSave").click(function(e) {
-                e.preventDefault();
+            if(!$("#txtName").val()) {
+                showNotification("Kategori adı giriniz!", "error");
+                return;
+            }
 
-                if(!$("#txtName").val()) {
-                    showNotification("Kategori adı giriniz!", "error");
-                    return;
-                }
+            // API'nin beklediği tam veri yapısı
+            var category = {
+                id: 0,
+                name: $("#txtName").val(),
+                description: $("#txtDescription").val() || "",
+                isActive: $("#cbIsActive").prop("checked"),
+                parentCategoryId: $("#cbParentCategory").val() ? parseInt($("#cbParentCategory").val()) : null,
+                parentCategoryName: "", // Zorunlu alan, boş olsa bile gönderilmeli
+                childCategories: [],
+                created: new Date().toISOString(),
+                updated: new Date().toISOString()
+            };
 
-                var category = {
-                    name: $("#txtName").val(),
-                    description: $("#txtDescription").val() || "",
-                    parentCategoryId: $("#cbParentCategory").val() ? parseInt($("#cbParentCategory").val()) : null,
-                    isActive: $("#cbIsActive").prop("checked")
-                };
+            console.log("Gönderilecek kategori:", category);
 
-                console.log("Gönderilecek kategori:", category);
+            $.ajax({
+                url: apiBaseUrl + "/Category",
+                type: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(category),
+                success: function(response) {
+                    console.log("Başarılı yanıt:", response);
+                    if(response.status) {
+                        showNotification("Kategori başarıyla eklendi", "success");
+                        GetCategoryList();
+                        LoadParentCategories();
 
-                $.ajax({
-                    url: apiBaseUrl + "/Category",
-                    type: "POST",
-                    headers: {
-                        "Authorization": "Bearer " + token,
-                        "Content-Type": "application/json"
-                    },
-                    data: JSON.stringify(category),
-                    processData: false,
-                    success: function(response) {
-                        console.log("Başarılı yanıt:", response);
-                        if(response.status) {
-                            showNotification("Kategori başarıyla eklendi", "success");
-                            GetCategoryList();
-                            LoadParentCategories();
-
-                            // Formu temizle
-                            $("#categoryForm")[0].reset();
-                        } else {
-                            showNotification(response.message || "Kategori eklenemedi", "error");
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Kategori eklenirken hata:", xhr, status, error);
+                        // Formu temizle
+                        $("#categoryForm")[0].reset();
+                    } else {
+                        showNotification(response.message || "Kategori eklenemedi", "error");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Kategori eklenirken hata:", xhr.responseText);
+                    try {
+                        var errorObj = JSON.parse(xhr.responseText);
+                        showNotification("Hata: " + (errorObj.message || error), "error");
+                    } catch(e) {
                         showNotification("Kategori eklenirken bir hata oluştu: " + error, "error");
                     }
-                });
+                }
             });
+        });
+                  
 
             // Kategori düzenleme formunu doldur
             $(document).on("click", ".btnEdit", function() {
@@ -239,57 +249,66 @@
                 });
             });
 
-            // Kategori güncelle
-            $("#btnEdit").click(function(e) {
-                e.preventDefault();
+                   // Kategori güncelle
+        $("#btnEdit").click(function(e) {
+            e.preventDefault();
 
-                if(!$("#txtName").val()) {
-                    showNotification("Kategori adı giriniz!", "error");
-                    return;
-                }
+            if(!$("#txtName").val()) {
+                showNotification("Kategori adı giriniz!", "error");
+                return;
+            }
 
-                var id = $("#txtId").val();
-                var category = {
-                    id: parseInt(id),
-                    name: $("#txtName").val(),
-                    description: $("#txtDescription").val() || "",
-                    parentCategoryId: $("#cbParentCategory").val() ? parseInt($("#cbParentCategory").val()) : null,
-                    isActive: $("#cbIsActive").prop("checked")
-                };
+            var id = $("#txtId").val();
+            var category = {
+                id: parseInt(id),
+                name: $("#txtName").val(),
+                description: $("#txtDescription").val() || "",
+                isActive: $("#cbIsActive").prop("checked"),
+                parentCategoryId: $("#cbParentCategory").val() ? parseInt($("#cbParentCategory").val()) : null,
+                parentCategoryName: null, // API bunu doldurur
+                childCategories: [], // Boş array
+                created: $("#created").val() || new Date().toISOString(), // Mevcut tarih veya şu anki
+                updated: new Date().toISOString() // Şu anki tarih
+            };
 
-                console.log("Güncellenecek kategori:", category);
+            console.log("Güncellenecek kategori:", category);
 
-                $.ajax({
-                    url: apiBaseUrl + "/Category/" + id,
-                    type: "PUT",
-                    headers: {
-                        "Authorization": "Bearer " + token,
-                        "Content-Type": "application/json"
-                    },
-                    data: JSON.stringify(category),
-                    processData: false,
-                    success: function(response) {
-                        if(response.status) {
-                            showNotification("Kategori başarıyla güncellendi", "success");
-                            GetCategoryList();
-                            LoadParentCategories();
+            $.ajax({
+                url: apiBaseUrl + "/Category/" + id,
+                type: "PUT",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(category),
+                processData: false,
+                success: function(response) {
+                    if(response.status) {
+                        showNotification("Kategori başarıyla güncellendi", "success");
+                        GetCategoryList();
+                        LoadParentCategories();
 
-                            // Formu temizle ve butonları sıfırla
-                            $("#categoryForm")[0].reset();
-                            $("#btnSave").show();
-                            $("#btnEdit").hide();
-                            $("#btnDelete").hide();
-                            $("#btnCancel").hide();
-                        } else {
-                            showNotification(response.message || "Kategori güncellenemedi", "error");
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Kategori güncellenirken hata:", xhr, status, error);
+                        // Formu temizle ve butonları sıfırla
+                        $("#categoryForm")[0].reset();
+                        $("#btnSave").show();
+                        $("#btnEdit").hide();
+                        $("#btnDelete").hide();
+                        $("#btnCancel").hide();
+                    } else {
+                        showNotification(response.message || "Kategori güncellenemedi", "error");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Kategori güncellenirken hata:", xhr);
+                    // Detaylı hata mesajını göster
+                    if (xhr.responseJSON) {
+                        showNotification("Hata: " + JSON.stringify(xhr.responseJSON), "error");
+                    } else {
                         showNotification("Kategori güncellenirken bir hata oluştu: " + error, "error");
                     }
-                });
+                }
             });
+        });
 
             // Kategori sil
             $("#btnDelete").click(function(e) {

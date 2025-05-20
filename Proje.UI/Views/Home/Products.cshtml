@@ -109,8 +109,8 @@
 </div>
 
 @section Scripts {
-<script>
-         $(document).ready(function(){
+    <script>
+        $(document).ready(function(){
             var apiBaseUrl = "@ViewBag.ApiBaseURL";
             var productId = 0;
 
@@ -163,6 +163,9 @@
                     ? apiBaseUrl + "/Product/Category/" + catId
                     : apiBaseUrl + "/Product";
 
+                // Önce AJAX çağrısı yapılmadan önce yükleniyor göster
+                $("#tbProducts tbody").html('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Ürünler yükleniyor...</td></tr>');
+
                 $.ajax({
                     url: url,
                     type: "GET",
@@ -171,11 +174,66 @@
                     },
                     success: function (data) {
                         console.log("Ürünler başarıyla getirildi:", data);
-                        ProductToTable(data);
+                        // Veri yapısını kontrol et ve uygun şekilde işle
+                        if (Array.isArray(data)) {
+                            // Direkt dizi geliyorsa
+                            ProductToTable(data);
+                        } else if (data && Array.isArray(data.data)) {
+                            // { status: true, data: [...] } şeklinde geliyorsa
+                            ProductToTable(data.data);
+                        } else if (data && typeof data === 'object') {
+                            // Tek bir ürün geliyorsa
+                            ProductToTable([data]);
+                        } else {
+                            $("#tbProducts tbody").html('<tr><td colspan="8" class="text-center">Ürün bulunamadı veya veri formatı uyumsuz</td></tr>');
+                            console.error("Beklenmeyen veri formatı:", data);
+                        }
                     },
-                    error: function (xhr) {
-                        console.error("Ürünler getirilirken hata:", xhr);
+                    error: function (xhr, status, error) {
+                        console.error("Ürünler getirilirken hata:", xhr.responseText);
+                        $("#tbProducts tbody").html('<tr><td colspan="8" class="text-center">Ürün listesi yüklenirken hata oluştu</td></tr>');
+
+                        if(xhr.status === 401) {
+                            localStorage.removeItem("token");
+                            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                            location.href = "/Login";
+                        }
+                        showNotification("Ürünler yüklenirken bir hata oluştu: " + error, "error");
                     }
+                });
+            }
+
+            // Ürünleri tabloya doldur
+            function ProductToTable(data) {
+                $("#tbProducts tbody").empty();
+
+                if (!data || data.length === 0) {
+                    $("#tbProducts tbody").append("<tr><td colspan='8' class='text-center'>Ürün bulunamadı</td></tr>");
+                    return;
+                }
+
+                $.each(data, function(i, item) {
+                    var row = "<tr>";
+                    row += "<td>" + (item.id || '') + "</td>";
+
+                    // Resim URL'sini kontrol et
+                    var imgUrl = item.imageUrl || '/images/no-image.png';
+                    row += '<td><img src="' + imgUrl + '" class="img-thumbnail btnImg" width="50" data-id="' + item.id + '" style="cursor:pointer;"></td>';
+
+                    row += "<td>" + (item.name || '') + "</td>";
+                    row += "<td>" + (item.price || 0) + " ₺</td>";
+                    row += "<td>" + (item.stock || 0) + "</td>";
+                    row += "<td>" + (item.categoryName || '') + "</td>";
+
+                    var statusBadge = item.isActive
+                        ? '<span class="badge bg-success">Aktif</span>'
+                        : '<span class="badge bg-danger">Pasif</span>';
+                    row += "<td>" + statusBadge + "</td>";
+
+                    row += '<td><button class="btn btn-warning btn-sm btnEdit" data-id="' + item.id + '"><i class="fas fa-edit"></i></button></td>';
+                    row += "</tr>";
+
+                    $("#tbProducts tbody").append(row);
                 });
             }
 
@@ -202,31 +260,6 @@
                 });
             }
 
-            // Ürünleri tabloya doldur
-            function ProductToTable(data) {
-                $("#tbProducts tbody").empty();
-
-                $.each(data, function(i, item) {
-                    var row = "<tr>";
-                    row += "<td>" + item.id + "</td>";
-                    row += '<td><img src="' + item.imageUrl + '" class="img-thumbnail btnImg" width="50" data-id="' + item.id + '" style="cursor:pointer;"></td>';
-                    row += "<td>" + item.name + "</td>";
-                    row += "<td>" + item.price + " ₺</td>";
-                    row += "<td>" + item.stock + "</td>";
-                    row += "<td>" + item.categoryName + "</td>";
-
-                    var statusBadge = item.isActive
-                        ? '<span class="badge bg-success">Aktif</span>'
-                        : '<span class="badge bg-danger">Pasif</span>';
-                    row += "<td>" + statusBadge + "</td>";
-
-                    row += '<td><button class="btn btn-warning btn-sm btnEdit" data-id="' + item.id + '"><i class="fas fa-edit"></i></button></td>';
-                    row += "</tr>";
-
-                    $("#tbProducts tbody").append(row);
-                });
-            }
-
             // Ürün kaydet
             $("#btnSave").click(function(e) {
                 e.preventDefault();
@@ -241,14 +274,22 @@
                     return;
                 }
 
+                // Seçilen kategorinin adını al
+                var categoryName = $("#cbCategoryId option:selected").text();
+
+                // API'nin beklediği tam veri yapısı
                 var product = {
+                    id: 0, // Yeni ürün için 0
                     name: $("#txtName").val(),
                     description: $("#txtDescription").val() || "",
                     price: parseFloat($("#txtPrice").val()) || 0,
                     stock: parseInt($("#txtStock").val()) || 0,
-                    categoryId: parseInt($("#cbCategoryId").val()),
                     imageUrl: $("#txtImageUrl").val() || "/images/no-image.png",
-                    isActive: $("#cbIsActive").prop("checked")
+                    categoryId: parseInt($("#cbCategoryId").val()),
+                    categoryName: categoryName, // Kategori adını seçilen option'dan al
+                    isActive: $("#cbIsActive").prop("checked"),
+                    created: new Date().toISOString(),
+                    updated: new Date().toISOString()
                 };
 
                 console.log("Gönderilecek ürün:", product);
@@ -261,7 +302,6 @@
                         "Content-Type": "application/json"
                     },
                     data: JSON.stringify(product),
-                    processData: false,
                     success: function(response) {
                         console.log("Başarılı yanıt:", response);
                         if(response.status) {
@@ -275,8 +315,13 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("Ürün eklenirken hata:", xhr, status, error);
-                        showNotification("Ürün eklenirken bir hata oluştu: " + error, "error");
+                        console.error("Ürün eklenirken hata:", xhr.responseText);
+                        try {
+                            var errorObj = JSON.parse(xhr.responseText);
+                            showNotification("Hata: " + (errorObj.message || error), "error");
+                        } catch(e) {
+                            showNotification("Ürün eklenirken bir hata oluştu: " + error, "error");
+                        }
                     }
                 });
             });
@@ -301,6 +346,17 @@
                         $("#cbCategoryId").val(data.categoryId);
                         $("#cbIsActive").prop("checked", data.isActive);
 
+                        // Orijinal oluşturma tarihini sakla (gizli alan)
+                        if (!$("#hdnCreated").length) {
+                            $("<input>").attr({
+                                type: "hidden",
+                                id: "hdnCreated",
+                                value: data.created
+                            }).appendTo("#productForm");
+                        } else {
+                            $("#hdnCreated").val(data.created);
+                        }
+
                         // Butonları göster/gizle
                         $("#btnSave").hide();
                         $("#btnEdit").show();
@@ -308,7 +364,8 @@
                         $("#btnCancel").show();
                     },
                     error: function(xhr) {
-                        console.error("Ürün getirilirken hata:", xhr);
+                        console.error("Ürün getirilirken hata:", xhr.responseText);
+                        showNotification("Ürün bilgileri yüklenirken bir hata oluştu", "error");
                     }
                 });
             });
@@ -328,15 +385,21 @@
                 }
 
                 var id = $("#txtId").val();
+                var categoryName = $("#cbCategoryId option:selected").text();
+
+                // API'nin beklediği tam veri yapısı
                 var product = {
                     id: parseInt(id),
                     name: $("#txtName").val(),
                     description: $("#txtDescription").val() || "",
                     price: parseFloat($("#txtPrice").val()) || 0,
                     stock: parseInt($("#txtStock").val()) || 0,
-                    categoryId: parseInt($("#cbCategoryId").val()),
                     imageUrl: $("#txtImageUrl").val() || "/images/no-image.png",
-                    isActive: $("#cbIsActive").prop("checked")
+                    categoryId: parseInt($("#cbCategoryId").val()),
+                    categoryName: categoryName, // Seçilen kategorinin adı
+                    isActive: $("#cbIsActive").prop("checked"),
+                    created: $("#hdnCreated").val() || new Date().toISOString(), // Gizli alanda saklanmışsa
+                    updated: new Date().toISOString()
                 };
 
                 console.log("Güncellenecek ürün:", product);
@@ -349,7 +412,6 @@
                         "Content-Type": "application/json"
                     },
                     data: JSON.stringify(product),
-                    processData: false,
                     success: function(response) {
                         if(response.status) {
                             showNotification("Ürün başarıyla güncellendi", "success");
@@ -366,8 +428,13 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("Ürün güncellenirken hata:", xhr, status, error);
-                        showNotification("Ürün güncellenirken bir hata oluştu: " + error, "error");
+                        console.error("Ürün güncellenirken hata:", xhr.responseText);
+                        try {
+                            var errorObj = JSON.parse(xhr.responseText);
+                            showNotification("Hata: " + (errorObj.message || error), "error");
+                        } catch(e) {
+                            showNotification("Ürün güncellenirken bir hata oluştu: " + error, "error");
+                        }
                     }
                 });
             });
@@ -401,8 +468,13 @@
                             }
                         },
                         error: function(xhr, status, error) {
-                            console.error("Ürün silinirken hata:", xhr, status, error);
-                            showNotification("Ürün silinirken bir hata oluştu: " + error, "error");
+                            console.error("Ürün silinirken hata:", xhr.responseText);
+                            try {
+                                var errorObj = JSON.parse(xhr.responseText);
+                                showNotification("Hata: " + (errorObj.message || error), "error");
+                            } catch(e) {
+                                showNotification("Ürün silinirken bir hata oluştu: " + error, "error");
+                            }
                         }
                     });
                 }
@@ -461,7 +533,6 @@
                         "Content-Type": "application/json"
                     },
                     data: JSON.stringify(upload),
-                    processData: false,
                     success: function(response) {
                         if (response.status) {
                             showNotification("Ürün fotoğrafı başarıyla güncellendi", "success");
@@ -470,8 +541,13 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("Resim yüklenirken hata:", xhr, status, error);
-                        showNotification("Resim yüklenirken bir hata oluştu: " + error, "error");
+                        console.error("Resim yüklenirken hata:", xhr.responseText);
+                        try {
+                            var errorObj = JSON.parse(xhr.responseText);
+                            showNotification("Hata: " + (errorObj.message || error), "error");
+                        } catch(e) {
+                            showNotification("Resim yüklenirken bir hata oluştu: " + error, "error");
+                        }
                     }
                 });
             }
@@ -482,5 +558,5 @@
                 GetProductList();
             });
         });
-</script>
+    </script>
 }
