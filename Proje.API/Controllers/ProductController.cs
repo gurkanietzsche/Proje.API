@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
 using Proje.API.Models;
 using Proje.API.Repositories;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -41,7 +42,7 @@ namespace Proje.API.Controllers
                 var productDtos = _mapper.Map<IEnumerable<ProductDTO>>(products);
                 return Ok(productDtos);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Ürünler getirilirken bir hata oluştu: " + ex.Message;
@@ -107,11 +108,20 @@ namespace Proje.API.Controllers
                     return BadRequest(_result);
                 }
 
-                var product = _mapper.Map<Product>(productDto);
-                // Zorunlu alanları manuel olarak set edin
-                product.Created = DateTime.Now;
-                product.Updated = DateTime.Now;
-                product.IsActive = true;
+                // Manuel olarak Product nesnesi oluştur
+                var product = new Product
+                {
+                    Name = productDto.Name,
+                    Description = productDto.Description,
+                    Price = productDto.Price,
+                    Stock = productDto.Stock,
+                    ImageUrl = productDto.ImageUrl,
+                    CategoryId = productDto.CategoryId,
+                    CategoryName = category.Name,
+                    IsActive = productDto.IsActive,
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now
+                };
 
                 await _productRepository.AddAsync(product);
                 await _productRepository.SaveChangesAsync();
@@ -125,11 +135,10 @@ namespace Proje.API.Controllers
             catch (Exception ex)
             {
                 _result.Status = false;
-                // Inner exception'ı da yakalayın
-                _result.Message = $"Ürün eklenirken bir hata oluştu: {ex.Message}";
+                _result.Message = "Ürün eklenirken bir hata oluştu: " + ex.Message;
                 if (ex.InnerException != null)
                 {
-                    _result.Message += $" Inner Exception: {ex.InnerException.Message}";
+                    _result.Message += " - " + ex.InnerException.Message;
                 }
                 return StatusCode(StatusCodes.Status500InternalServerError, _result);
             }
@@ -137,7 +146,7 @@ namespace Proje.API.Controllers
 
         // PUT: api/Product/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin ProductOwner")]
+        [Authorize(Roles = "Admin,ProductOwner")]
         public async Task<ActionResult<ResultDTO>> UpdateProduct(int id, ProductDTO productDto)
         {
             if (!ModelState.IsValid)
@@ -173,7 +182,16 @@ namespace Proje.API.Controllers
                     return BadRequest(_result);
                 }
 
-                _mapper.Map(productDto, product);
+                // Manuel property güncellemesi
+                product.Name = productDto.Name;
+                product.Description = productDto.Description;
+                product.Price = productDto.Price;
+                product.Stock = productDto.Stock;
+                product.ImageUrl = productDto.ImageUrl;
+                product.CategoryId = productDto.CategoryId;
+                product.CategoryName = category.Name;
+                product.IsActive = productDto.IsActive;
+                product.Updated = DateTime.Now;
 
                 await _productRepository.UpdateAsync(product);
                 await _productRepository.SaveChangesAsync();
@@ -181,9 +199,9 @@ namespace Proje.API.Controllers
                 _result.Status = true;
                 _result.Message = "Ürün başarıyla güncellendi";
 
-                return _result;
+                return Ok(_result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Ürün güncellenirken bir hata oluştu: " + ex.Message;
@@ -213,9 +231,9 @@ namespace Proje.API.Controllers
                 _result.Status = true;
                 _result.Message = "Ürün başarıyla silindi";
 
-                return _result;
+                return Ok(_result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Ürün silinirken bir hata oluştu: " + ex.Message;
@@ -246,14 +264,72 @@ namespace Proje.API.Controllers
                 _result.Status = true;
                 _result.Message = "Ürün stoğu başarıyla güncellendi";
 
-                return _result;
+                return Ok(_result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Ürün stoğu güncellenirken bir hata oluştu: " + ex.Message;
                 return StatusCode(StatusCodes.Status500InternalServerError, _result);
             }
         }
+
+        // Ürün resim yükleme endpoint'i
+        [HttpPost("Upload")]
+        [Authorize(Roles = "Admin,ProductOwner")]
+        public async Task<ActionResult<ResultDTO>> UploadProductImage([FromBody] ProductImageUploadDTO uploadDto)
+        {
+            try
+            {
+                // Base64 veriyi kontrol et
+                if (string.IsNullOrEmpty(uploadDto.PicData) || !uploadDto.PicData.StartsWith("data:image"))
+                {
+                    _result.Status = false;
+                    _result.Message = "Geçersiz resim verisi";
+                    return BadRequest(_result);
+                }
+
+                // Ürünü kontrol et
+                var product = await _productRepository.GetByIdAsync(uploadDto.ProductId);
+                if (product == null)
+                {
+                    _result.Status = false;
+                    _result.Message = "Ürün bulunamadı";
+                    return NotFound(_result);
+                }
+
+                // Base64 resmi işleme ve kaydetme kodları buraya gelecek
+                // Gerçek uygulamada dosya sistemi veya blob storage'a kaydedilir
+
+                // Örnek olarak, burada yalnızca ürünün resim URL'sini güncelliyoruz
+                string fileName = $"product_{uploadDto.ProductId}_{DateTime.Now.Ticks}{uploadDto.PicExt}";
+                string imageUrl = $"/images/products/{fileName}";
+
+                // Ürün resim URL'sini güncelle
+                product.ImageUrl = imageUrl;
+                await _productRepository.UpdateAsync(product);
+                await _productRepository.SaveChangesAsync();
+
+                _result.Status = true;
+                _result.Message = "Ürün resmi başarıyla yüklendi";
+                _result.Data = imageUrl;
+
+                return Ok(_result);
+            }
+            catch (Exception ex)
+            {
+                _result.Status = false;
+                _result.Message = "Resim yüklenirken bir hata oluştu: " + ex.Message;
+                return StatusCode(StatusCodes.Status500InternalServerError, _result);
+            }
+        }
+    }
+
+    // Resim yükleme için DTO
+    public class ProductImageUploadDTO
+    {
+        public int ProductId { get; set; }
+        public string PicData { get; set; } // Base64 encoded
+        public string PicExt { get; set; } // .jpg, .png, etc.
     }
 }

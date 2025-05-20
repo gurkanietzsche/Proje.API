@@ -1,6 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Giriş";
-    Layout = "_LayoutLogin"; // Eğer özel bir login layout'unuz varsa
 }
 
 <div class="row justify-content-center">
@@ -15,10 +14,10 @@
                                 <h1 class="h4 text-gray-900 mb-4">Giriş Yap</h1>
                             </div>
                             <form class="user">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <input type="text" class="form-control form-control-user" id="txtUserName" placeholder="Kullanıcı Adı">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <input type="password" class="form-control form-control-user" id="txtPassword" placeholder="Şifre">
                                 </div>
                                 <a href="javascript:void(0);" id="btnLogin" class="btn btn-primary btn-user btn-block">
@@ -42,25 +41,27 @@
         $(document).ready(function(){
             var apiBaseUrl = "@ViewBag.ApiBaseURL";
 
-            // Kullanıcı zaten giriş yapmışsa ana sayfaya yönlendir
-            if(localStorage.getItem("token") && localStorage.getItem("token") !== "") {
-                location.href = "/";
-                return;
-            }
-
+            // Butonlara tıklama
             $("#btnLogin").click(function(){
-                if($("#txtUserName").val()=="" || $("#txtUserName").val()==null || $("#txtPassword").val()=="" || $("#txtPassword").val()==null){
-                    showNotification("Kullanıcı Adı ve Parola Giriniz!", "error");
-                    return false;
-                }
+                DoLogin();
+            });
 
-                var userName = $("#txtUserName").val();
+            // Enter tuşuna basınca giriş yap
+            $("#txtPassword").on("keypress", function(e) {
+                if (e.which === 13) {
+                    DoLogin();
+                }
+            });
+
+            // Giriş işlemi
+            function DoLogin() {
+                var username = $("#txtUserName").val();
                 var password = $("#txtPassword").val();
 
-                var login = {
-                    Username: userName,
-                    Password: password
-                };
+                if(!username || !password) {
+                    showNotification("Kullanıcı adı ve şifre giriniz!", "error");
+                    return;
+                }
 
                 // Giriş butonunu devre dışı bırak
                 $("#btnLogin").addClass("disabled").html('<i class="fas fa-spinner fa-spin"></i> Giriş Yapılıyor...');
@@ -68,18 +69,23 @@
                 $.ajax({
                     url: apiBaseUrl + "/Account/login",
                     type: "POST",
-                    data: JSON.stringify(login),
                     contentType: "application/json",
-                    success: function (d) {
-                        if (d.status){
-                            // Token bilgisini sakla
-                            localStorage.setItem("token", d.data.token);
-                            // Cookie olarak da saklayalım (güvenli)
-                            document.cookie = "token=" + d.data.token + "; path=/";
+                    data: JSON.stringify({
+                        username: username,
+                        password: password
+                    }),
+                    success: function(response) {
+                        console.log("Giriş yanıtı:", response);
 
-                            localStorage.setItem("userName", d.data.username);
-                            localStorage.setItem("userId", d.data.id);
-                            localStorage.setItem("userRoles", d.data.roles.join(", "));
+                        if(response.status) {
+                            // Token bilgisini sakla
+                            localStorage.setItem("token", response.data.token);
+                            // Cookie olarak da saklayalım (güvenli)
+                            document.cookie = "token=" + response.data.token + "; path=/";
+
+                            localStorage.setItem("userName", response.data.username);
+                            localStorage.setItem("userId", response.data.id);
+                            localStorage.setItem("userRoles", response.data.roles.join(", "));
                             localStorage.setItem("userPhoto", "profil.jpg"); // Varsayılan profil resmi
 
                             showNotification("Giriş başarılı, yönlendiriliyorsunuz...", "success");
@@ -89,30 +95,19 @@
                                 location.href = "/";
                             }, 1000);
                         } else {
-                            showNotification(d.message, "error");
+                            showNotification(response.message || "Giriş başarısız", "error");
                             // Giriş butonunu tekrar aktif yap
                             $("#btnLogin").removeClass("disabled").html("Giriş Yap");
                         }
                     },
-                    error: function (d) {
-                        // Hata mesajını göster
-                        showNotification("Bağlantı hatası: " + (d.responseJSON ? d.responseJSON.message : "Sunucuya erişilemiyor"), "error");
-
+                    error: function(xhr) {
+                        console.error("Giriş hatası:", xhr);
+                        showNotification("Giriş yapılırken bir hata oluştu", "error");
                         // Giriş butonunu tekrar aktif yap
                         $("#btnLogin").removeClass("disabled").html("Giriş Yap");
-
-                        // Hata detayını konsola yaz
-                        console.log("Login Error:", d);
                     }
                 });
-            });
-
-            // Enter tuşuna basılınca giriş yap
-            $("#txtPassword").on("keypress", function (e) {
-                if (e.which === 13) {
-                    $("#btnLogin").click();
-                }
-            });
+            }
         });
     </script>
 }

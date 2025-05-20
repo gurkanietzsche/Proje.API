@@ -39,7 +39,7 @@ namespace Proje.API.Controllers
                 var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
                 return Ok(categoryDtos);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Kategoriler getirilirken bir hata oluştu: " + ex.Message;
@@ -77,15 +77,13 @@ namespace Proje.API.Controllers
 
             try
             {
-                // Yeni bir model oluştur
+                // Manuel olarak Category nesnesi oluştur
                 var category = new Category
                 {
                     Name = categoryDto.Name,
                     Description = categoryDto.Description,
-                    ParentCategoryId = categoryDto.ParentCategoryId,
-                    IsActive = categoryDto.IsActive,
-                    Created = DateTime.Now,
-                    Updated = DateTime.Now
+                    ParentCategoryId = categoryDto.ParentCategoryId == 0 ? null : categoryDto.ParentCategoryId,
+                    IsActive = categoryDto.IsActive
                 };
 
                 await _categoryRepository.AddAsync(category);
@@ -97,7 +95,7 @@ namespace Proje.API.Controllers
 
                 return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, _result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Kategori eklenirken bir hata oluştu: " + ex.Message;
@@ -134,12 +132,11 @@ namespace Proje.API.Controllers
 
             try
             {
-                // Manuel olarak category özelliklerini güncelleyelim
+                // Manuel property güncellemesi
                 category.Name = categoryDto.Name;
                 category.Description = categoryDto.Description;
-                category.ParentCategoryId = categoryDto.ParentCategoryId;
+                category.ParentCategoryId = categoryDto.ParentCategoryId == 0 ? null : categoryDto.ParentCategoryId;
                 category.IsActive = categoryDto.IsActive;
-                category.Updated = DateTime.Now;
 
                 await _categoryRepository.UpdateAsync(category);
                 await _categoryRepository.SaveChangesAsync();
@@ -147,9 +144,9 @@ namespace Proje.API.Controllers
                 _result.Status = true;
                 _result.Message = "Kategori başarıyla güncellendi";
 
-                return _result;
+                return Ok(_result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Kategori güncellenirken bir hata oluştu: " + ex.Message;
@@ -178,9 +175,9 @@ namespace Proje.API.Controllers
                 _result.Status = true;
                 _result.Message = "Kategori başarıyla silindi";
 
-                return _result;
+                return Ok(_result);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Kategori silinirken bir hata oluştu: " + ex.Message;
@@ -199,7 +196,7 @@ namespace Proje.API.Controllers
                 var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
                 return Ok(categoryDtos);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Ana kategoriler getirilirken bir hata oluştu: " + ex.Message;
@@ -217,7 +214,7 @@ namespace Proje.API.Controllers
                 var categoryDtos = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
                 return Ok(categoryDtos);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Alt kategoriler getirilirken bir hata oluştu: " + ex.Message;
@@ -243,7 +240,7 @@ namespace Proje.API.Controllers
                 var categoryDto = _mapper.Map<CategoryDTO>(category);
                 return Ok(categoryDto);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _result.Status = false;
                 _result.Message = "Kategori hiyerarşisi getirilirken bir hata oluştu: " + ex.Message;

@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Ürün Listesi - <span id="catName"></span></h6>
             </div>
             <div class="card-body">
@@ -24,7 +24,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Ürünler buraya gelecek -->
+                            <!-- Ürünler Javascript ile doldurulacak -->
                         </tbody>
                     </table>
                 </div>
@@ -37,61 +37,53 @@
                 <h6 class="m-0 font-weight-bold text-primary">Ürün Ekle/Düzenle</h6>
             </div>
             <div class="card-body">
-                <div class="form-group">
+                <form id="productForm">
                     <input type="hidden" id="txtId" />
-                    <label for="txtName">Ürün Adı</label>
-                    <input type="text" class="form-control" id="txtName" placeholder="Ürün adı giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="txtDescription">Açıklama</label>
-                    <textarea class="form-control" id="txtDescription" rows="3" placeholder="Açıklama giriniz"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="txtPrice">Fiyat</label>
-                    <input type="number" class="form-control" id="txtPrice" placeholder="Fiyat giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="txtStock">Stok</label>
-                    <input type="number" class="form-control" id="txtStock" placeholder="Stok miktarı giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="txtImageUrl">Resim URL</label>
-                    <input type="text" class="form-control" id="txtImageUrl" placeholder="Resim URL giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="cbCategoryId">Kategori</label>
-                    <select class="form-control" id="cbCategoryId">
-                        <option value="">Seçiniz</option>
-                    </select>
-                </div>
-                <div class="form-group form-check">
-                    <input type="checkbox" class="form-check-input" id="cbIsActive" checked>
-                    <label class="form-check-label" for="cbIsActive">Aktif</label>
-                </div>
-                <button type="button" id="btnSave" class="btn btn-success btn-icon-split">
-                    <span class="icon text-white-50">
-                        <i class="fas fa-check"></i>
-                    </span>
-                    <span class="text">Kaydet</span>
-                </button>
-                <button type="button" id="btnEdit" class="btn btn-warning btn-icon-split">
-                    <span class="icon text-white-50">
-                        <i class="fas fa-edit"></i>
-                    </span>
-                    <span class="text">Güncelle</span>
-                </button>
-                <button type="button" id="btnDelete" class="btn btn-danger btn-icon-split">
-                    <span class="icon text-white-50">
-                        <i class="fas fa-trash"></i>
-                    </span>
-                    <span class="text">Sil</span>
-                </button>
-                <button type="button" id="btnCancel" class="btn btn-secondary btn-icon-split">
-                    <span class="icon text-white-50">
-                        <i class="fas fa-times"></i>
-                    </span>
-                    <span class="text">Vazgeç</span>
-                </button>
+                    <div class="form-group mb-3">
+                        <label for="txtName">Ürün Adı</label>
+                        <input type="text" class="form-control" id="txtName" placeholder="Ürün adı giriniz">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="txtDescription">Açıklama</label>
+                        <textarea class="form-control" id="txtDescription" rows="3" placeholder="Açıklama giriniz"></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="txtPrice">Fiyat</label>
+                        <input type="number" step="0.01" class="form-control" id="txtPrice" placeholder="Fiyat giriniz">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="txtStock">Stok</label>
+                        <input type="number" class="form-control" id="txtStock" placeholder="Stok miktarı giriniz">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="txtImageUrl">Resim URL</label>
+                        <input type="text" class="form-control" id="txtImageUrl" placeholder="Resim URL giriniz">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="cbCategoryId">Kategori</label>
+                        <select class="form-control" id="cbCategoryId">
+                            <option value="">Seçiniz</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="cbIsActive" checked>
+                        <label class="form-check-label" for="cbIsActive">Aktif</label>
+                    </div>
+                    <div class="d-grid gap-2 d-md-block">
+                        <button type="button" id="btnSave" class="btn btn-success">
+                            <i class="fas fa-save"></i> Kaydet
+                        </button>
+                        <button type="button" id="btnEdit" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Güncelle
+                        </button>
+                        <button type="button" id="btnDelete" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                        <button type="button" id="btnCancel" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Vazgeç
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -121,48 +113,29 @@
     $(document).ready(function(){
         var apiBaseUrl = "@ViewBag.ApiBaseURL";
         var productId = 0;
-        if(localStorage.getItem("token") == "" || localStorage.getItem("token") == null){
+        
+        if(!localStorage.getItem("token")) {
             location.href = "/Login";
             return false;
         }
+        
         var token = localStorage.getItem("token");
         var userRoles = localStorage.getItem("userRoles") ? localStorage.getItem("userRoles").split(", ") : [];
 
         var catId = "@ViewBag.CatId";
+        
+        // Sayfa yüklendiğinde
         GetCategoryById();
         GetProductList();
         GetCategoryList();
+        
+        // Başlangıçta düzenleme butonlarını gizle
         $("#btnCancel").hide();
         $("#btnEdit").hide();
         $("#btnDelete").hide();
 
-        function GetProductList(){
-            var url = catId && catId != "0"
-                ? apiBaseUrl + "/Product/Category/" + catId
-                : apiBaseUrl + "/Product";
-
-            $.ajax({
-                url: url,
-                type: "GET",
-                headers: {
-                    "Authorization": "Bearer " + token
-                },
-                success: function (d) {
-                    ProductToTable(d);
-                },
-                error: function (d) {
-                    if(d.status === 401) {
-                        localStorage.removeItem("token");
-                        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                        location.href = "/Login";
-                    } else {
-                        showNotification("Ürünler yüklenirken bir hata oluştu", "error");
-                    }
-                },
-            });
-        }
-
-        function GetCategoryById(){
+        // Kategori bilgisini getir
+        function GetCategoryById() {
             if (!catId || catId == "0") {
                 $("#catName").html("Tüm Ürünler");
                 return;
@@ -174,253 +147,289 @@
                 headers: {
                     "Authorization": "Bearer " + token
                 },
-                success: function (d) {
-                    $("#catName").html(d.name);
-                    $("#cbCategoryId").val(d.id);
+                success: function (data) {
+                    $("#catName").html(data.name);
+                    $("#cbCategoryId").val(data.id);
                 },
-                error: function (d) {
-                    showNotification("Kategori bilgisi yüklenirken bir hata oluştu", "error");
-                },
+                error: function (xhr) {
+                    console.error("Kategori bilgisi getirilirken hata:", xhr);
+                }
             });
         }
 
-        function GetCategoryList(){
+        // Ürün listesini getir
+        function GetProductList() {
+            var url = catId && catId != "0"
+                ? apiBaseUrl + "/Product/Category/" + catId
+                : apiBaseUrl + "/Product";
+
             $.ajax({
-                url: apiBaseUrl + "/Category/",
+                url: url,
                 type: "GET",
                 headers: {
                     "Authorization": "Bearer " + token
                 },
-                success: function (d) {
+                success: function (data) {
+                    console.log("Ürünler başarıyla getirildi:", data);
+                    ProductToTable(data);
+                },
+                error: function (xhr) {
+                    console.error("Ürünler getirilirken hata:", xhr);
+                }
+            });
+        }
+
+        // Kategori listesini getir
+        function GetCategoryList() {
+            $.ajax({
+                url: apiBaseUrl + "/Category",
+                type: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                success: function (data) {
                     $("#cbCategoryId").empty();
-                    var options = "<option value=''>Seçiniz</option>";
-                    $.each(d, function(i, item){
-                        if (item.id == catId){
-                            options += '<option value="' + item.id + '" selected>' + item.name + '</option>';
-                        } else {
-                            options += '<option value="' + item.id + '">' + item.name + '</option>';
-                        }
+                    $("#cbCategoryId").append('<option value="">Seçiniz</option>');
+
+                    $.each(data, function(i, item) {
+                        var selected = (item.id == catId) ? 'selected' : '';
+                        $("#cbCategoryId").append('<option value="' + item.id + '" ' + selected + '>' + item.name + '</option>');
                     });
-                    $("#cbCategoryId").append(options);
                 },
-                error: function (d) {
-                    showNotification("Kategori listesi yüklenirken bir hata oluştu", "error");
-                },
+                error: function (xhr) {
+                    console.error("Kategoriler getirilirken hata:", xhr);
+                }
             });
         }
 
         // Ürünleri tabloya doldur
-        function ProductToTable(data){
+        function ProductToTable(data) {
             $("#tbProducts tbody").empty();
-            var row = "";
-            $.each(data, function(i, item){
-                row += "<tr>";
+            
+            $.each(data, function(i, item) {
+                var row = "<tr>";
                 row += "<td>" + item.id + "</td>";
                 row += '<td><img src="' + item.imageUrl + '" class="img-thumbnail btnImg" width="50" data-id="' + item.id + '" style="cursor:pointer;"></td>';
                 row += "<td>" + item.name + "</td>";
                 row += "<td>" + item.price + " ₺</td>";
                 row += "<td>" + item.stock + "</td>";
                 row += "<td>" + item.categoryName + "</td>";
-                row += "<td>" + (item.isActive ? '<span class="badge bg-success text-white">Aktif</span>' : '<span class="badge bg-danger text-white">Pasif</span>') + "</td>";
+                
+                var statusBadge = item.isActive 
+                    ? '<span class="badge bg-success">Aktif</span>' 
+                    : '<span class="badge bg-danger">Pasif</span>';
+                row += "<td>" + statusBadge + "</td>";
+                
                 row += '<td><button class="btn btn-warning btn-sm btnEdit" data-id="' + item.id + '"><i class="fas fa-edit"></i></button></td>';
                 row += "</tr>";
+                
+                $("#tbProducts tbody").append(row);
             });
-            $("#tbProducts tbody").append(row);
         }
 
-        $("#btnSave").click(function(){
-            if($("#txtName").val() == "" || $("#txtName").val() == null){
-                showNotification("Ürün Adı Giriniz!", "error");
-                return false;
+        // Ürün kaydet
+        $("#btnSave").click(function(e) {
+            e.preventDefault();
+            
+            if(!$("#txtName").val()) {
+                showNotification("Ürün adı giriniz!", "error");
+                return;
             }
-
-            if($("#cbCategoryId").val() == "" || $("#cbCategoryId").val() == null){
-                showNotification("Kategori Seçiniz!", "error");
-                return false;
+            
+            if(!$("#cbCategoryId").val()) {
+                showNotification("Kategori seçiniz!", "error");
+                return;
             }
-
-            var name = $("#txtName").val();
-            var price = $("#txtPrice").val();
-            var stock = $("#txtStock").val();
-            var description = $("#txtDescription").val();
-            var categoryId = $("#cbCategoryId").val();
-            var imageUrl = $("#txtImageUrl").val() || "/images/no-image.png";
-            var isActive = $("#cbIsActive").is(":checked");
-
+            
             var product = {
-                name: name,
-                price: price,
-                stock: stock,
-                description: description,
-                categoryId: categoryId,
-                imageUrl: imageUrl,
-                isActive: isActive
+                name: $("#txtName").val(),
+                description: $("#txtDescription").val() || "",
+                price: parseFloat($("#txtPrice").val()) || 0,
+                stock: parseInt($("#txtStock").val()) || 0,
+                categoryId: parseInt($("#cbCategoryId").val()),
+                imageUrl: $("#txtImageUrl").val() || "/images/no-image.png",
+                isActive: $("#cbIsActive").prop("checked")
             };
-
+            
+            console.log("Gönderilecek ürün:", product);
+            
             $.ajax({
                 url: apiBaseUrl + "/Product",
                 type: "POST",
                 headers: {
                     "Authorization": "Bearer " + token
                 },
-                data: JSON.stringify(product),
                 contentType: "application/json",
-                success: function (d) {
-                    if (d.status){
+                data: JSON.stringify(product),
+                success: function(response) {
+                    console.log("Başarılı yanıt:", response);
+                    if(response.status) {
                         showNotification("Ürün başarıyla eklendi", "success");
                         GetProductList();
+                        
                         // Formu temizle
-                        $("#txtName").val("");
-                        $("#txtPrice").val("");
-                        $("#txtStock").val("");
-                        $("#txtDescription").val("");
-                        $("#txtImageUrl").val("");
-                        $("#cbIsActive").prop("checked", true);
+                        $("#productForm")[0].reset();
                     } else {
-                        showNotification(d.message, "error");
+                        showNotification(response.message || "Ürün eklenemedi", "error");
                     }
                 },
-                error: function (d) {
-                    showNotification("Ürün eklenirken bir hata oluştu", "error");
-                },
+                error: function(xhr) {
+                    console.error("Ürün eklenirken hata:", xhr);
+                }
             });
         });
 
-        $(document).on("click", ".btnEdit", function(){
-            var id = $(this).attr("data-id");
+        // Ürün düzenleme formunu doldur
+        $(document).on("click", ".btnEdit", function() {
+            var id = $(this).data("id");
+            
             $.ajax({
                 url: apiBaseUrl + "/Product/" + id,
                 type: "GET",
                 headers: {
                     "Authorization": "Bearer " + token
                 },
-                contentType: "application/json",
-                success: function (d) {
+                success: function(data) {
+                    $("#txtId").val(data.id);
+                    $("#txtName").val(data.name);
+                    $("#txtDescription").val(data.description);
+                    $("#txtPrice").val(data.price);
+                    $("#txtStock").val(data.stock);
+                    $("#txtImageUrl").val(data.imageUrl);
+                    $("#cbCategoryId").val(data.categoryId);
+                    $("#cbIsActive").prop("checked", data.isActive);
+                    
+                    // Butonları göster/gizle
                     $("#btnSave").hide();
-                    $("#btnCancel").show();
                     $("#btnEdit").show();
                     $("#btnDelete").show();
-                    $("#txtId").val(d.id);
-                    $("#txtName").val(d.name);
-                    $("#txtPrice").val(d.price);
-                    $("#txtStock").val(d.stock);
-                    $("#txtDescription").val(d.description);
-                    $("#txtImageUrl").val(d.imageUrl);
-                    $("#cbCategoryId").val(d.categoryId);
-                    $("#cbIsActive").prop("checked", d.isActive);
+                    $("#btnCancel").show();
                 },
-                error: function (d) {
-                    showNotification("Ürün bilgileri yüklenirken bir hata oluştu", "error");
-                },
+                error: function(xhr) {
+                    console.error("Ürün getirilirken hata:", xhr);
+                }
             });
         });
 
-        $("#btnCancel").click(function(){
-            $("#btnCancel").hide();
-            $("#btnEdit").hide();
-            $("#btnDelete").hide();
-            $("#btnSave").show();
-            $("#txtName").val("");
-            $("#txtPrice").val("");
-            $("#txtStock").val("");
-            $("#txtDescription").val("");
-            $("#txtImageUrl").val("");
-            $("#cbIsActive").prop("checked", true);
-            $("#txtId").val("");
-        });
-
-        $("#btnEdit").click(function(){
-            if($("#txtName").val() == "" || $("#txtName").val() == null){
-                showNotification("Ürün Adı Giriniz!", "error");
-                return false;
+        // Ürün güncelle
+        $("#btnEdit").click(function(e) {
+            e.preventDefault();
+            
+            if(!$("#txtName").val()) {
+                showNotification("Ürün adı giriniz!", "error");
+                return;
             }
-
-            if($("#cbCategoryId").val() == "" || $("#cbCategoryId").val() == null){
-                showNotification("Kategori Seçiniz!", "error");
-                return false;
+            
+            if(!$("#cbCategoryId").val()) {
+                showNotification("Kategori seçiniz!", "error");
+                return;
             }
-
+            
             var id = $("#txtId").val();
-            var name = $("#txtName").val();
-            var price = $("#txtPrice").val();
-            var stock = $("#txtStock").val();
-            var description = $("#txtDescription").val();
-            var categoryId = $("#cbCategoryId").val();
-            var imageUrl = $("#txtImageUrl").val() || "/images/no-image.png";
-            var isActive = $("#cbIsActive").is(":checked");
-
             var product = {
-                id: id,
-                name: name,
-                price: price,
-                stock: stock,
-                description: description,
-                categoryId: categoryId,
-                imageUrl: imageUrl,
-                isActive: isActive
+                id: parseInt(id),
+                name: $("#txtName").val(),
+                description: $("#txtDescription").val() || "",
+                price: parseFloat($("#txtPrice").val()) || 0,
+                stock: parseInt($("#txtStock").val()) || 0,
+                categoryId: parseInt($("#cbCategoryId").val()),
+                imageUrl: $("#txtImageUrl").val() || "/images/no-image.png",
+                isActive: $("#cbIsActive").prop("checked")
             };
-
+            
+            console.log("Güncellenecek ürün:", product);
+            
             $.ajax({
                 url: apiBaseUrl + "/Product/" + id,
                 type: "PUT",
                 headers: {
                     "Authorization": "Bearer " + token
                 },
-                data: JSON.stringify(product),
                 contentType: "application/json",
-                success: function (d) {
-                    if (d.status){
+                data: JSON.stringify(product),
+                success: function(response) {
+                    if(response.status) {
                         showNotification("Ürün başarıyla güncellendi", "success");
                         GetProductList();
-                        $("#btnCancel").click();
+                        
+                        // Formu temizle ve butonları sıfırla
+                        $("#productForm")[0].reset();
+                        $("#btnSave").show();
+                        $("#btnEdit").hide();
+                        $("#btnDelete").hide();
+                        $("#btnCancel").hide();
                     } else {
-                        showNotification(d.message, "error");
+                        showNotification(response.message || "Ürün güncellenemedi", "error");
                     }
                 },
-                error: function (d) {
-                    showNotification("Ürün güncellenirken bir hata oluştu", "error");
-                },
+                error: function(xhr) {
+                    console.error("Ürün güncellenirken hata:", xhr);
+                }
             });
         });
 
-        $("#btnDelete").click(function(){
+        // Ürün sil
+        $("#btnDelete").click(function(e) {
+            e.preventDefault();
+            
             var id = $("#txtId").val();
-            if (confirm("Bu ürünü silmek istediğinizden emin misiniz?")) {
+            
+            if(confirm("Bu ürünü silmek istediğinizden emin misiniz?")) {
                 $.ajax({
                     url: apiBaseUrl + "/Product/" + id,
                     type: "DELETE",
                     headers: {
                         "Authorization": "Bearer " + token
                     },
-                    contentType: "application/json",
-                    success: function (d) {
-                        if (d.status){
+                    success: function(response) {
+                        if(response.status) {
                             showNotification("Ürün başarıyla silindi", "success");
                             GetProductList();
-                            $("#btnCancel").click();
-                        } else {
-                            showNotification(d.message, "error");
+                            
+                            // Formu temizle ve butonları sıfırla
+                            $("#productForm")[0].reset();
+                            $("#btnSave").show();
+                            $("#btnEdit").hide();
+                            $("#btnDelete").hide();
+                            $("#btnCancel").hide();
+                        } 
+                            } else {
+                                showNotification(response.message || "Ürün silinemedi", "error");
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error("Ürün silinirken hata:", xhr);
                         }
-                    },
-                    error: function (d) {
-                        showNotification("Ürün silinirken bir hata oluştu", "error");
-                    },
-                });
-            }
-        });
+                    });
+                }
+            });
 
-            $(document).on("click", ".btnImg", function(){
+            // İptal butonu
+            $("#btnCancel").click(function(e) {
+                e.preventDefault();
+
+                // Formu temizle ve butonları sıfırla
+                $("#productForm")[0].reset();
+                $("#btnSave").show();
+                $("#btnEdit").hide();
+                $("#btnDelete").hide();
+                $("#btnCancel").hide();
+            });
+
+            // Resme tıklama (resim görüntüleme)
+            $(document).on("click", ".btnImg", function() {
                 var src = $(this).attr("src");
-                productId = $(this).attr("data-id");
+                productId = $(this).data("id");
                 $("#productPicture").attr("src", src);
                 $("#productModal").modal("show");
             });
 
-            $("#fileInput").change(function () {
+            // Resim dosyası seçimi
+            $("#fileInput").change(function() {
                 var files = $(this).prop('files');
                 if (files && files[0]) {
                     var reader = new FileReader();
-                    reader.onload = function (e) {
+                    reader.onload = function(e) {
                         $('#productPicture').attr('src', e.target.result);
                         var fileData = e.target.result;
 
@@ -432,6 +441,7 @@
                 }
             });
 
+            // Ürün resmi güncelleme
             function ProductPicUpdate(picData, picExt) {
                 var upload = {
                     productId: productId,
@@ -445,22 +455,23 @@
                     headers: {
                         "Authorization": "Bearer " + token
                     },
-                    data: JSON.stringify(upload),
                     contentType: "application/json",
-                    success: function (data) {
-                        if (data.status) {
+                    data: JSON.stringify(upload),
+                    success: function(response) {
+                        if (response.status) {
                             showNotification("Ürün fotoğrafı başarıyla güncellendi", "success");
                         } else {
-                            showNotification(data.message, "error");
+                            showNotification(response.message || "Resim yüklenemedi", "error");
                         }
                     },
-                    error: function () {
-                        showNotification("Resim yüklenirken bir hata oluştu", "error");
+                    error: function(xhr) {
+                        console.error("Resim yüklenirken hata:", xhr);
                     }
                 });
             }
 
-            $("#btnUploadClose").click(function(){
+            // Modal kapatma
+            $("#btnUploadClose").click(function() {
                 $("#productModal").modal("hide");
                 GetProductList();
             });

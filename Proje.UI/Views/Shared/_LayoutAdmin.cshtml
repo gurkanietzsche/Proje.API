@@ -241,81 +241,56 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
-    <div id="notificationArea" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+    <!-- Bildirim Alanı -->
+    <div id="notificationArea" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;"></div>
+
+    <script>
+        // Bildirim sistemi
+        function showNotification(message, type) {
+            // Mevcut bildirimleri temizle
+            $("#notificationArea").empty();
+
+            // Tip için renk belirle
+            var alertClass = "alert-info";
+            switch(type) {
+                case "success": alertClass = "alert-success"; break;
+                case "error": alertClass = "alert-danger"; break;
+                case "warning": alertClass = "alert-warning"; break;
+            }
+
+            // Bildirim elementi oluştur
+            var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show"></div>')
+                .html('<strong>' + message + '</strong><button type="button" class="btn-close" data-bs-dismiss="alert"></button>');
+
+            // Bildirim alanına ekle
+            $("#notificationArea").append(notification);
+
+            // 5 saniye sonra otomatik kaybolsun
+            setTimeout(function() {
+                notification.alert('close');
+            }, 5000);
+        }
+
+        // Global AJAX hata yakalama
+        $(document).ajaxError(function(event, xhr, settings, error) {
+            console.log("AJAX Hatası:", xhr);
+            if (xhr.status === 401) {
+                localStorage.removeItem("token");
+                document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                location.href = "/Login";
+            } else {
+                var errorMessage = "";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMessage = response.message || response.Message || error;
+                } catch (e) {
+                    errorMessage = error || "Bir hata oluştu";
+                }
+                showNotification("İşlem sırasında bir hata oluştu: " + errorMessage, "error");
+            }
+        });
+    </script>
 
 </body>
-<script>
-    // Bildirim fonksiyonu
-    function showNotification(message, type) {
-        // Önceki bildirimleri temizle
-        $("#notificationArea").empty();
 
-        // Bildirim tipi için renk belirle
-        var bgClass = "";
-        switch(type) {
-            case "success":
-                bgClass = "bg-success";
-                break;
-            case "error":
-                bgClass = "bg-danger";
-                break;
-            case "warning":
-                bgClass = "bg-warning";
-                break;
-            default:
-                bgClass = "bg-info";
-        }
-
-        // Bildirim elementini oluştur
-        var notification = $('<div class="alert ' + bgClass + ' text-white" role="alert"></div>')
-            .html('<strong>' + message + '</strong>')
-            .css({
-                'min-width': '250px',
-                'box-shadow': '0 4px 8px rgba(0,0,0,0.2)',
-                'border-radius': '5px'
-            });
-
-        // Bildirim alanına ekle
-        $("#notificationArea").append(notification).fadeIn(300);
-
-        // 3 saniye sonra bildirim kaybolsun
-        setTimeout(function() {
-            $("#notificationArea").fadeOut(500, function() {
-                $(this).empty();
-            });
-        }, 3000);
-    }
-
-        // Global AJAX error handler
-    $(document).ajaxError(function(event, xhr, settings, error) {
-        console.log("Ajax Error: Status: " + xhr.status + ", Message: " + error);
-
-        if (xhr.status === 401) {
-            localStorage.removeItem("token");
-            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            showNotification("Oturumunuz sonlandı, lütfen tekrar giriş yapın", "error");
-            setTimeout(function() {
-                window.location.href = "/Login";
-            }, 2000);
-        } else if (xhr.status === 403) {
-            showNotification("Bu işlemi yapmak için yetkiniz bulunmamaktadır", "error");
-        } else if (xhr.status === 404) {
-            showNotification("İstenen kaynak bulunamadı", "error");
-        } else if (xhr.status === 500) {
-            showNotification("Sunucu hatası oluştu: " + (xhr.responseJSON ? xhr.responseJSON.message : error), "error");
-        } else {
-            showNotification("İşlem sırasında bir hata oluştu", "error");
-        }
-    });
-
-    // AJAX gönderimlerinde token header'ı otomatik ekle
-    $.ajaxSetup({
-        beforeSend: function(xhr) {
-            var token = localStorage.getItem("token");
-            if (token) {
-                xhr.setRequestHeader("Authorization", "Bearer " + token);
-            }
-        }
-    });
-</script>
 </html>

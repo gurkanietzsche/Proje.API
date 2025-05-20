@@ -12,8 +12,8 @@ using Proje.API.Data;
 namespace Proje.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250520103218_mig7")]
-    partial class mig7
+    [Migration("20250520103916_mig8")]
+    partial class mig8
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
