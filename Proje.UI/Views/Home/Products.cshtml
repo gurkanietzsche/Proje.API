@@ -257,10 +257,11 @@
                 url: apiBaseUrl + "/Product",
                 type: "POST",
                 headers: {
-                    "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
                 },
-                contentType: "application/json",
                 data: JSON.stringify(product),
+                    processData: false,
                 success: function(response) {
                     console.log("Başarılı yanıt:", response);
                     if(response.status) {
@@ -273,8 +274,9 @@
                         showNotification(response.message || "Ürün eklenemedi", "error");
                     }
                 },
-                error: function(xhr) {
-                    console.error("Ürün eklenirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Ürün eklenirken hata:", xhr, status, error);
+                        showNotification("Ürün eklenirken bir hata oluştu: " + error, "error");
                 }
             });
         });
@@ -343,10 +345,12 @@
                 url: apiBaseUrl + "/Product/" + id,
                 type: "PUT",
                 headers: {
-                    "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
                 },
                 contentType: "application/json",
                 data: JSON.stringify(product),
+                    processData: false,
                 success: function(response) {
                     if(response.status) {
                         showNotification("Ürün başarıyla güncellendi", "success");
@@ -362,8 +366,9 @@
                         showNotification(response.message || "Ürün güncellenemedi", "error");
                     }
                 },
-                error: function(xhr) {
-                    console.error("Ürün güncellenirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Ürün güncellenirken hata:", xhr, status, error);
+                        showNotification("Ürün güncellenirken bir hata oluştu: " + error, "error");
                 }
             });
         });
@@ -397,8 +402,9 @@
                                 showNotification(response.message || "Ürün silinemedi", "error");
                             }
                         },
-                        error: function(xhr) {
-                            console.error("Ürün silinirken hata:", xhr);
+                        error: function(xhr, status, error) {
+                            console.error("Ürün silinirken hata:", xhr, status, error);
+                            showNotification("Ürün silinirken bir hata oluştu: " + error, "error");
                         }
                     });
                 }
@@ -453,10 +459,12 @@
                     url: apiBaseUrl + "/Product/Upload",
                     type: "POST",
                     headers: {
-                        "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
                     },
                     contentType: "application/json",
                     data: JSON.stringify(upload),
+                    processData: false,
                     success: function(response) {
                         if (response.status) {
                             showNotification("Ürün fotoğrafı başarıyla güncellendi", "success");
@@ -464,8 +472,9 @@
                             showNotification(response.message || "Resim yüklenemedi", "error");
                         }
                     },
-                    error: function(xhr) {
-                        console.error("Resim yüklenirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Resim yüklenirken hata:", xhr, status, error);
+                        showNotification("Resim yüklenirken bir hata oluştu: " + error, "error");
                     }
                 });
             }

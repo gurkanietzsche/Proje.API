@@ -258,7 +258,8 @@
                     url: apiBaseUrl + "/Category/" + id,
                     type: "PUT",
                     headers: {
-                        "Authorization": "Bearer " + token
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
                     },
                     contentType: "application/json",
                     data: JSON.stringify(category),
@@ -278,8 +279,9 @@
                             showNotification(response.message || "Kategori güncellenemedi", "error");
                         }
                     },
-                    error: function(xhr) {
-                        console.error("Kategori güncellenirken hata:", xhr);
+                    error: function(xhr, status, error) {
+                        console.error("Kategori güncellenirken hata:", xhr, status, error);
+                        showNotification("Kategori güncellenirken bir hata oluştu: " + error, "error");
                     }
                 });
             });
