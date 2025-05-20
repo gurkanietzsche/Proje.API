@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Proje.API.DTOs
@@ -25,5 +26,9 @@ namespace Proje.API.DTOs
 
         [DefaultValue(new object[0])]  // Boş array için
         public List<CategoryDTO> ChildCategories { get; set; } = new List<CategoryDTO>();
+
+        // Created ve Updated alanları ekleyelim
+        public DateTime Created { get; set; }
+        public DateTime Updated { get; set; }
     }
 }

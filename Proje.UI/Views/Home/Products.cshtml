@@ -1,4 +1,122 @@
-﻿@section Scripts {
+﻿@{
+    ViewData["Title"] = "Ürünler";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Ürün Listesi - <span id="catName"></span></h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="tbProducts" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Resim</th>
+                                <th>Ürün Adı</th>
+                                <th>Fiyat</th>
+                                <th>Stok</th>
+                                <th>Kategori</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Ürünler buraya gelecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ürün Ekle/Düzenle</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <input type="hidden" id="txtId" />
+                    <label for="txtName">Ürün Adı</label>
+                    <input type="text" class="form-control" id="txtName" placeholder="Ürün adı giriniz">
+                </div>
+                <div class="form-group">
+                    <label for="txtDescription">Açıklama</label>
+                    <textarea class="form-control" id="txtDescription" rows="3" placeholder="Açıklama giriniz"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="txtPrice">Fiyat</label>
+                    <input type="number" class="form-control" id="txtPrice" placeholder="Fiyat giriniz">
+                </div>
+                <div class="form-group">
+                    <label for="txtStock">Stok</label>
+                    <input type="number" class="form-control" id="txtStock" placeholder="Stok miktarı giriniz">
+                </div>
+                <div class="form-group">
+                    <label for="txtImageUrl">Resim URL</label>
+                    <input type="text" class="form-control" id="txtImageUrl" placeholder="Resim URL giriniz">
+                </div>
+                <div class="form-group">
+                    <label for="cbCategoryId">Kategori</label>
+                    <select class="form-control" id="cbCategoryId">
+                        <option value="">Seçiniz</option>
+                    </select>
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="cbIsActive" checked>
+                    <label class="form-check-label" for="cbIsActive">Aktif</label>
+                </div>
+                <button type="button" id="btnSave" class="btn btn-success btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-check"></i>
+                    </span>
+                    <span class="text">Kaydet</span>
+                </button>
+                <button type="button" id="btnEdit" class="btn btn-warning btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-edit"></i>
+                    </span>
+                    <span class="text">Güncelle</span>
+                </button>
+                <button type="button" id="btnDelete" class="btn btn-danger btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                    <span class="text">Sil</span>
+                </button>
+                <button type="button" id="btnCancel" class="btn btn-secondary btn-icon-split">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-times"></i>
+                    </span>
+                    <span class="text">Vazgeç</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resim Yükleme Modal -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">Ürün Resmi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="productPicture" class="img-fluid mb-3" style="max-height: 300px;">
+                <input type="file" id="fileInput" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnUploadClose" class="btn btn-secondary">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
 <script>
     $(document).ready(function(){
         var apiBaseUrl = "@ViewBag.ApiBaseURL";
@@ -93,7 +211,21 @@
 
         // Ürünleri tabloya doldur
         function ProductToTable(data){
-            // Mevcut kod aynı kalabilir
+            $("#tbProducts tbody").empty();
+            var row = "";
+            $.each(data, function(i, item){
+                row += "<tr>";
+                row += "<td>" + item.id + "</td>";
+                row += '<td><img src="' + item.imageUrl + '" class="img-thumbnail btnImg" width="50" data-id="' + item.id + '" style="cursor:pointer;"></td>';
+                row += "<td>" + item.name + "</td>";
+                row += "<td>" + item.price + " ₺</td>";
+                row += "<td>" + item.stock + "</td>";
+                row += "<td>" + item.categoryName + "</td>";
+                row += "<td>" + (item.isActive ? '<span class="badge bg-success text-white">Aktif</span>' : '<span class="badge bg-danger text-white">Pasif</span>') + "</td>";
+                row += '<td><button class="btn btn-warning btn-sm btnEdit" data-id="' + item.id + '"><i class="fas fa-edit"></i></button></td>';
+                row += "</tr>";
+            });
+            $("#tbProducts tbody").append(row);
         }
 
         $("#btnSave").click(function(){
@@ -277,61 +409,61 @@
             }
         });
 
-        $(document).on("click", ".btnImg", function(){
-            var src = $(this).attr("src");
-            productId = $(this).attr("data-id");
-            $("#productPicture").attr("src", src);
-            $("#productModal").modal("show");
-        });
+            $(document).on("click", ".btnImg", function(){
+                var src = $(this).attr("src");
+                productId = $(this).attr("data-id");
+                $("#productPicture").attr("src", src);
+                $("#productModal").modal("show");
+            });
 
-        $("#fileInput").change(function () {
-            var files = $(this).prop('files');
-            if (files && files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#productPicture').attr('src', e.target.result);
-                    var fileData = e.target.result;
+            $("#fileInput").change(function () {
+                var files = $(this).prop('files');
+                if (files && files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#productPicture').attr('src', e.target.result);
+                        var fileData = e.target.result;
 
-                    // Dosya uzantısını belirle
-                    var fileExtension = files[0].name.split('.').pop().toLowerCase();
-                    ProductPicUpdate(fileData, fileExtension);
-                };
-                reader.readAsDataURL(files[0]);
-            }
-        });
-
-        function ProductPicUpdate(picData, picExt) {
-            var upload = {
-                productId: productId,
-                picData: picData,
-                picExt: "." + picExt
-            };
-
-            $.ajax({
-                url: apiBaseUrl + "/Product/Upload",
-                type: "POST",
-                headers: {
-                    "Authorization": "Bearer " + token
-                },
-                data: JSON.stringify(upload),
-                contentType: "application/json",
-                success: function (data) {
-                    if (data.status) {
-                        showNotification("Ürün fotoğrafı başarıyla güncellendi", "success");
-                    } else {
-                        showNotification(data.message, "error");
-                    }
-                },
-                error: function () {
-                    showNotification("Resim yüklenirken bir hata oluştu", "error");
+                        // Dosya uzantısını belirle
+                        var fileExtension = files[0].name.split('.').pop().toLowerCase();
+                        ProductPicUpdate(fileData, fileExtension);
+                    };
+                    reader.readAsDataURL(files[0]);
                 }
             });
-        }
 
-        $("#btnUploadClose").click(function(){
-            $("#productModal").modal("hide");
-            GetProductList();
+            function ProductPicUpdate(picData, picExt) {
+                var upload = {
+                    productId: productId,
+                    picData: picData,
+                    picExt: "." + picExt
+                };
+
+                $.ajax({
+                    url: apiBaseUrl + "/Product/Upload",
+                    type: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify(upload),
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data.status) {
+                            showNotification("Ürün fotoğrafı başarıyla güncellendi", "success");
+                        } else {
+                            showNotification(data.message, "error");
+                        }
+                    },
+                    error: function () {
+                        showNotification("Resim yüklenirken bir hata oluştu", "error");
+                    }
+                });
+            }
+
+            $("#btnUploadClose").click(function(){
+                $("#productModal").modal("hide");
+                GetProductList();
+            });
         });
-    });
-</script>
+    </script>
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Proje.API.DTOs;
 using Proje.API.Models;
 using Proje.API.Repositories;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -76,7 +77,16 @@ namespace Proje.API.Controllers
 
             try
             {
-                var category = _mapper.Map<Category>(categoryDto);
+                // Yeni bir model oluştur
+                var category = new Category
+                {
+                    Name = categoryDto.Name,
+                    Description = categoryDto.Description,
+                    ParentCategoryId = categoryDto.ParentCategoryId,
+                    IsActive = categoryDto.IsActive,
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now
+                };
 
                 await _categoryRepository.AddAsync(category);
                 await _categoryRepository.SaveChangesAsync();
@@ -124,7 +134,12 @@ namespace Proje.API.Controllers
 
             try
             {
-                _mapper.Map(categoryDto, category);
+                // Manuel olarak category özelliklerini güncelleyelim
+                category.Name = categoryDto.Name;
+                category.Description = categoryDto.Description;
+                category.ParentCategoryId = categoryDto.ParentCategoryId;
+                category.IsActive = categoryDto.IsActive;
+                category.Updated = DateTime.Now;
 
                 await _categoryRepository.UpdateAsync(category);
                 await _categoryRepository.SaveChangesAsync();

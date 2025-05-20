@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -10,6 +11,9 @@ namespace Proje.API.Models
         {
             Products = new HashSet<Product>();
             ChildCategories = new HashSet<Category>();
+            IsActive = true;
+            Created = DateTime.Now;
+            Updated = DateTime.Now;
         }
 
         public int Id { get; set; }
@@ -21,6 +25,11 @@ namespace Proje.API.Models
         public string Description { get; set; }
 
         public bool IsActive { get; set; }
+
+        // Created ve Updated alanları
+        public DateTime Created { get; set; }
+
+        public DateTime Updated { get; set; }
 
         // Self-referencing relationship
         public int? ParentCategoryId { get; set; }

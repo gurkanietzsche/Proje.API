@@ -18,21 +18,37 @@ namespace Proje.API.Repositories
 
         public async Task<IEnumerable<Category>> GetAllAsync()
         {
-            return await _context.Categories.ToListAsync();
+            return await _context.Categories
+                .Include(c => c.ParentCategory)
+                .ToListAsync();
         }
 
         public async Task<Category> GetByIdAsync(int id)
         {
-            return await _context.Categories.FindAsync(id);
+            return await _context.Categories
+                .Include(c => c.ParentCategory)
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task AddAsync(Category category)
         {
+            // Eğer oluşturma zamanı ayarlanmamışsa otomatik ayarla
+            if (category.Created == default)
+            {
+                category.Created = System.DateTime.Now;
+            }
+
+            // Güncelleme zamanını her zaman şimdiki zaman olarak ayarla
+            category.Updated = System.DateTime.Now;
+
             await _context.Categories.AddAsync(category);
         }
 
         public Task UpdateAsync(Category category)
         {
+            // Güncelleme zamanını her zaman şimdiki zaman olarak ayarla
+            category.Updated = System.DateTime.Now;
+
             _context.Categories.Update(category);
             return Task.CompletedTask;
         }
@@ -82,4 +98,4 @@ namespace Proje.API.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
     }
-} 
+}

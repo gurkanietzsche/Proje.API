@@ -39,5 +39,11 @@ namespace Proje.API.Repositories
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
         }
+
+        // Bu metodu ekleyin:
+        public async Task AddOrderItemAsync(OrderItem orderItem)
+        {
+            await _context.OrderItems.AddAsync(orderItem);
+        }
     }
 }

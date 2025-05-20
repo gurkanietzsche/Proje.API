@@ -1,58 +1,118 @@
-﻿<script>
-    $(document).ready(function(){
-        var apiBaseUrl = "@ViewBag.ApiBaseURL";
+﻿@{
+    ViewData["Title"] = "Giriş";
+    Layout = "_LayoutLogin"; // Eğer özel bir login layout'unuz varsa
+}
 
-        $("#btnLogin").click(function(){
-            if($("#txtUserName").val()=="" || $("#txtUserName").val()==null || $("#txtPassword").val()=="" || $("#txtPassword").val()==null){
-                showNotification("Kullanıcı Adı ve Parola Giriniz!", "error");
-                return false;
+<div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-12 col-md-9">
+        <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card-body p-0">
+                <div class="row">
+                    <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
+                    <div class="col-lg-6">
+                        <div class="p-5">
+                            <div class="text-center">
+                                <h1 class="h4 text-gray-900 mb-4">Giriş Yap</h1>
+                            </div>
+                            <form class="user">
+                                <div class="form-group">
+                                    <input type="text" class="form-control form-control-user" id="txtUserName" placeholder="Kullanıcı Adı">
+                                </div>
+                                <div class="form-group">
+                                    <input type="password" class="form-control form-control-user" id="txtPassword" placeholder="Şifre">
+                                </div>
+                                <a href="javascript:void(0);" id="btnLogin" class="btn btn-primary btn-user btn-block">
+                                    Giriş Yap
+                                </a>
+                            </form>
+                            <hr>
+                            <div class="text-center">
+                                <a class="small" href="/Register">Hesap Oluştur</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function(){
+            var apiBaseUrl = "@ViewBag.ApiBaseURL";
+
+            // Kullanıcı zaten giriş yapmışsa ana sayfaya yönlendir
+            if(localStorage.getItem("token") && localStorage.getItem("token") !== "") {
+                location.href = "/";
+                return;
             }
 
-            var userName = $("#txtUserName").val();
-            var password = $("#txtPassword").val();
+            $("#btnLogin").click(function(){
+                if($("#txtUserName").val()=="" || $("#txtUserName").val()==null || $("#txtPassword").val()=="" || $("#txtPassword").val()==null){
+                    showNotification("Kullanıcı Adı ve Parola Giriniz!", "error");
+                    return false;
+                }
 
-            var login = new Object();
-            login.Username = userName;
-            login.Password = password;
+                var userName = $("#txtUserName").val();
+                var password = $("#txtPassword").val();
 
-            $.ajax({
-                url: apiBaseUrl + "/Account/login",
-                type: "POST",
-                data: JSON.stringify(login),
-                contentType: "application/json",
-                success: function (d) {
-                    if (d.status){
-                        // Token bilgisini sakla
-                        localStorage.setItem("token", d.data.token);
-                        // Cookie olarak da saklayalım (güvenli)
-                        document.cookie = "token=" + d.data.token + "; path=/";
+                var login = {
+                    Username: userName,
+                    Password: password
+                };
 
-                        localStorage.setItem("userName", d.data.username);
-                        localStorage.setItem("userId", d.data.id);
-                        localStorage.setItem("userRoles", d.data.roles.join(", "));
-                        localStorage.setItem("userPhoto", "profil.jpg"); // Varsayılan profil resmi
+                // Giriş butonunu devre dışı bırak
+                $("#btnLogin").addClass("disabled").html('<i class="fas fa-spinner fa-spin"></i> Giriş Yapılıyor...');
 
-                        showNotification("Giriş başarılı, yönlendiriliyorsunuz...", "success");
+                $.ajax({
+                    url: apiBaseUrl + "/Account/login",
+                    type: "POST",
+                    data: JSON.stringify(login),
+                    contentType: "application/json",
+                    success: function (d) {
+                        if (d.status){
+                            // Token bilgisini sakla
+                            localStorage.setItem("token", d.data.token);
+                            // Cookie olarak da saklayalım (güvenli)
+                            document.cookie = "token=" + d.data.token + "; path=/";
 
-                        // Ana sayfaya yönlendir
-                        setTimeout(function() {
-                            location.href = "/";
-                        }, 1000);
-                    } else {
-                        showNotification(d.message, "error");
+                            localStorage.setItem("userName", d.data.username);
+                            localStorage.setItem("userId", d.data.id);
+                            localStorage.setItem("userRoles", d.data.roles.join(", "));
+                            localStorage.setItem("userPhoto", "profil.jpg"); // Varsayılan profil resmi
+
+                            showNotification("Giriş başarılı, yönlendiriliyorsunuz...", "success");
+
+                            // Ana sayfaya yönlendir
+                            setTimeout(function() {
+                                location.href = "/";
+                            }, 1000);
+                        } else {
+                            showNotification(d.message, "error");
+                            // Giriş butonunu tekrar aktif yap
+                            $("#btnLogin").removeClass("disabled").html("Giriş Yap");
+                        }
+                    },
+                    error: function (d) {
+                        // Hata mesajını göster
+                        showNotification("Bağlantı hatası: " + (d.responseJSON ? d.responseJSON.message : "Sunucuya erişilemiyor"), "error");
+
+                        // Giriş butonunu tekrar aktif yap
+                        $("#btnLogin").removeClass("disabled").html("Giriş Yap");
+
+                        // Hata detayını konsola yaz
+                        console.log("Login Error:", d);
                     }
-                },
-                error: function (d) {
-                    showNotification("Bağlantı hatası oluştu!", "error");
+                });
+            });
+
+            // Enter tuşuna basılınca giriş yap
+            $("#txtPassword").on("keypress", function (e) {
+                if (e.which === 13) {
+                    $("#btnLogin").click();
                 }
             });
         });
-
-        // Enter tuşuna basılınca giriş yap
-        $("#txtPassword").on("keypress", function (e) {
-            if (e.which === 13) {
-                $("#btnLogin").click();
-            }
-        });
-    });
-</script>
+    </script>
+}
